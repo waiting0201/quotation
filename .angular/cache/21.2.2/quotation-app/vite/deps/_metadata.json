@@ -1,0 +1,109 @@
+{
+  "hash": "42b55acd",
+  "configHash": "508938b2",
+  "lockfileHash": "282a7b77",
+  "browserHash": "0dd68b1e",
+  "optimized": {
+    "@angular/common/http": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/http.mjs",
+      "file": "@angular_common_http.js",
+      "fileHash": "b38ba53b",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "99123414",
+      "needsInterop": false
+    },
+    "@angular/core/rxjs-interop": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/rxjs-interop.mjs",
+      "file": "@angular_core_rxjs-interop.js",
+      "fileHash": "38d9bcfc",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "4f87570a",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "f35c5b43",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "0d15ed25",
+      "needsInterop": false
+    },
+    "rxjs": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/index.js",
+      "file": "rxjs.js",
+      "fileHash": "84be5327",
+      "needsInterop": false
+    },
+    "ng-apexcharts": {
+      "src": "../../../../../../node_modules/ng-apexcharts/fesm2022/ng-apexcharts.mjs",
+      "file": "ng-apexcharts.js",
+      "fileHash": "1f08b194",
+      "needsInterop": false
+    },
+    "@angular/common": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/common.mjs",
+      "file": "@angular_common.js",
+      "fileHash": "a2832228",
+      "needsInterop": false
+    },
+    "rxjs/operators": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/operators/index.js",
+      "file": "rxjs_operators.js",
+      "fileHash": "9b303a47",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "apexcharts.esm-3EVOHBP5": {
+      "file": "apexcharts__esm-3EVOHBP5.js"
+    },
+    "core.esm-KCZEZIYV": {
+      "file": "core__esm-KCZEZIYV.js"
+    },
+    "apexcharts.ssr.esm-SSP2QRLJ": {
+      "file": "apexcharts__ssr__esm-SSP2QRLJ.js"
+    },
+    "chunk-3VP3WCFE": {
+      "file": "chunk-3VP3WCFE.js"
+    },
+    "chunk-JAWNDAUJ": {
+      "file": "chunk-JAWNDAUJ.js"
+    },
+    "chunk-O2VOZWS3": {
+      "file": "chunk-O2VOZWS3.js"
+    },
+    "chunk-YEVW3BMB": {
+      "file": "chunk-YEVW3BMB.js"
+    },
+    "chunk-D7EG22TG": {
+      "file": "chunk-D7EG22TG.js"
+    },
+    "chunk-DP3QWPS7": {
+      "file": "chunk-DP3QWPS7.js"
+    },
+    "chunk-NGWI62ZP": {
+      "file": "chunk-NGWI62ZP.js"
+    },
+    "chunk-LQKJR2HS": {
+      "file": "chunk-LQKJR2HS.js"
+    },
+    "chunk-73FCWE6J": {
+      "file": "chunk-73FCWE6J.js"
+    },
+    "chunk-GOMI4DH3": {
+      "file": "chunk-GOMI4DH3.js"
+    }
+  }
+}

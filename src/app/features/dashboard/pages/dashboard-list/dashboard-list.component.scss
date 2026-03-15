@@ -1,0 +1,449 @@
+// ============================================
+// Dashboard — Cyber Command Center
+// ============================================
+
+// ─── Page Header ─────────────────────────────
+.dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.dash-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #D4D4D4;
+  line-height: 1.2;
+}
+
+.dash-subtitle {
+  font-size: 14px;
+  color: #969696;
+  margin-top: 4px;
+}
+
+.dash-date {
+  font-size: 13px;
+  color: #969696;
+  font-family: var(--font-mono);
+}
+
+// ─── Stat Cards Row ──────────────────────────
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #252526;
+  border: 1px solid #474747;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 200ms, transform 200ms;
+
+  &:hover {
+    border-color: var(--card-accent, rgba(0, 127, 212, 0.30));
+    transform: translateY(-2px);
+  }
+}
+
+.stat-card-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  opacity: 0.08;
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #3C3C3C;
+  color: var(--card-accent, #00D4FF);
+  flex-shrink: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #D4D4D4;
+  line-height: 1.1;
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #CCCCCC;
+  margin-top: 2px;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: #636363;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+}
+
+// ─── Panels ──────────────────────────────────
+.panel {
+  background: #252526;
+  border: 1px solid #474747;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #E0E0E0;
+}
+
+.panel-title-icon {
+  width: 18px;
+  height: 18px;
+  color: #00D4FF;
+  flex-shrink: 0;
+}
+
+// ─── Middle Row ──────────────────────────────
+.mid-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// ─── Calendar ────────────────────────────────
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #4E4E4E;
+  border-radius: 6px;
+  background: transparent;
+  color: #CCCCCC;
+  cursor: pointer;
+  transition: all 150ms;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: #3C3C3C;
+    color: #00D4FF;
+    border-color: rgba(0, 127, 212, 0.30);
+  }
+}
+
+.cal-today-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #4E4E4E;
+  border-radius: 6px;
+  background: transparent;
+  color: #CCCCCC;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 150ms;
+
+  &:hover {
+    background: #3C3C3C;
+    color: #00D4FF;
+    border-color: rgba(0, 127, 212, 0.30);
+  }
+}
+
+.cal-month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #E0E0E0;
+  margin-left: 8px;
+  font-family: var(--font-mono);
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #969696;
+}
+
+.cal-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #353535;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cal-weekday {
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #636363;
+  background: #2D2D2D;
+}
+
+.cal-cell {
+  position: relative;
+  min-height: 54px;
+  padding: 4px 6px;
+  background: #2D2D2D;
+  transition: background 150ms;
+
+  &:hover {
+    background: #122240;
+  }
+}
+
+.cal-cell-muted {
+  .cal-day-num {
+    color: #263A52;
+  }
+}
+
+.cal-cell-today {
+  .cal-day-num {
+    background: #00D4FF;
+    color: #1E1E1E;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 600;
+  }
+}
+
+.cal-day-num {
+  font-size: 12px;
+  color: #969696;
+  font-family: var(--font-mono);
+}
+
+.cal-events {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.cal-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+// ─── Recent Quotations ───────────────────────
+.recent-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #353535;
+  transition: background 150ms;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #303030;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.recent-item-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recent-code {
+  font-size: 12px;
+  color: #636363;
+  font-family: var(--font-mono);
+}
+
+.recent-customer {
+  font-size: 13px;
+  color: #E0E0E0;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.recent-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.recent-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #D4D4D4;
+  font-family: var(--font-mono);
+}
+
+.recent-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.recent-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ─── Bottom Row ──────────────────────────────
+.bot-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+// ─── ApexCharts Overrides ────────────────────
+.trend-panel,
+.donut-panel {
+  ::ng-deep .apexcharts-canvas {
+    background: transparent !important;
+  }
+
+  ::ng-deep .apexcharts-tooltip {
+    background: #2D2D2D !important;
+    border: 1px solid #4E4E4E !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  ::ng-deep .apexcharts-tooltip-title {
+    background: #252526 !important;
+    border-bottom: 1px solid #474747 !important;
+    color: #E0E0E0 !important;
+  }
+
+  ::ng-deep .apexcharts-legend-text {
+    color: #CCCCCC !important;
+  }
+}
+
+// ─── Loading ─────────────────────────────────
+.loading-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  font-size: 16px;
+  color: #969696;
+}
+
+// ─── Responsive ──────────────────────────────
+@media (max-width: 1280px) {
+  .stat-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mid-row,
+  .bot-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
