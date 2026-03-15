@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>群組管理 — 設計稿</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #070C18;
+    --bg-app: #0A1020;
+    --bg-surface: #0D1830;
+    --bg-elevated: #112040;
+    --bg-highlight: #162850;
+    --primary: #00B8F0;
+    --primary-medium: #00A3D4;
+    --primary-dark: #0088B3;
+    --neon-cyan: #00D4FF;
+    --neon-green: #10FFB0;
+    --neon-amber: #FFB300;
+    --neon-red: #FF4466;
+    --neon-violet: #A78BFA;
+    --text-primary: #F0F8FF;
+    --text-secondary: #B0C8DC;
+    --text-muted: #6B8AAB;
+    --text-disabled: #3A5070;
+    --border-subtle: rgba(0, 212, 255, 0.08);
+    --border-default: rgba(0, 212, 255, 0.15);
+    --border-strong: rgba(0, 212, 255, 0.30);
+    --border-active: rgba(0, 212, 255, 0.60);
+    --font-sans: "Noto Sans TC", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --radius-btn: 6px;
+    --radius-input: 6px;
+    --radius-panel: 10px;
+    --radius-modal: 14px;
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ========== LAYOUT ========== */
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .design-label {
+    display: inline-block;
+    background: rgba(0, 212, 255, 0.08);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--neon-cyan);
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 48px 0;
+  }
+
+  /* ========== PAGE HEADER ========== */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .page-header-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 212, 255, 0.08);
+    border-radius: 8px;
+    color: var(--neon-cyan);
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ========== BREADCRUMB ========== */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+
+  .breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--duration-fast);
+  }
+
+  .breadcrumb a:hover { color: var(--neon-cyan); }
+
+  .breadcrumb .sep {
+    color: var(--text-disabled);
+    font-size: 11px;
+  }
+
+  .breadcrumb .current {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* ========== BUTTONS ========== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    border: none;
+    outline: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #006E92, #00A3D4, #00D4FF);
+    color: var(--text-primary);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.20), 0 4px 12px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.02em;
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.40), 0 6px 16px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+  }
+
+  .btn-ghost:hover {
+    color: var(--neon-cyan);
+    border-color: var(--border-strong);
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .btn-danger-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+    padding: 6px 10px;
+  }
+
+  .btn-danger-ghost:hover {
+    color: var(--neon-red);
+    background: rgba(255, 68, 102, 0.08);
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border-default);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+
+  .btn-icon:hover {
+    color: var(--neon-cyan);
+    border-color: var(--border-strong);
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .btn-icon.danger:hover {
+    color: var(--neon-red);
+    border-color: rgba(255, 68, 102, 0.30);
+    background: rgba(255, 68, 102, 0.06);
+  }
+
+  /* ========== PANEL ========== */
+  .panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-panel);
+    box-shadow:
+      0 0 0 1px rgba(0, 212, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(0, 212, 255, 0.04);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #D0E4F0;
+  }
+
+  .panel-body {
+    padding: 0;
+  }
+
+  /* ========== DATA TABLE ========== */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .data-table tbody tr {
+    transition: background var(--duration-fast);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .data-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .data-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.03);
+  }
+
+  .data-table tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+    vertical-align: middle;
+  }
+
+  .data-table .col-actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .data-table .col-actions .action-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .user-count {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: rgba(0, 212, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* ========== PAGINATION ========== */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .pagination-info {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border-default);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+
+  .page-btn:hover {
+    color: var(--neon-cyan);
+    border-color: var(--border-strong);
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .page-btn.active {
+    background: rgba(0, 212, 255, 0.12);
+    border-color: var(--border-active);
+    color: var(--neon-cyan);
+    font-weight: 600;
+  }
+
+  .page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ========== EMPTY STATE ========== */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+  }
+
+  .empty-state-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    color: var(--text-disabled);
+  }
+
+  .empty-state-text {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* ========== MODAL / DIALOG ========== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.60);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 70;
+  }
+
+  .modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-modal);
+    width: 100%;
+    max-width: 780px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+      0 0 0 1px rgba(0, 212, 255, 0.08),
+      0 25px 80px rgba(0, 0, 0, 0.7),
+      0 0 60px rgba(0, 212, 255, 0.05);
+    animation: fade-up 0.25s cubic-bezier(0.0, 0.0, 0.2, 1) both;
+    position: relative;
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    opacity: 0.4;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-title-icon {
+    color: var(--neon-cyan);
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-btn);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+
+  .modal-close:hover {
+    color: var(--text-primary);
+    background: rgba(0, 212, 255, 0.08);
+  }
+
+  .modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ========== FORM ========== */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .form-label .required {
+    color: var(--neon-red);
+    margin-left: 2px;
+  }
+
+  .form-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    background: rgba(6, 18, 36, 0.8);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    outline: none;
+    transition: all var(--duration-fast);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-disabled);
+  }
+
+  .form-input:focus {
+    border-color: rgba(0, 212, 255, 0.50);
+    box-shadow:
+      0 0 0 3px rgba(0, 212, 255, 0.15),
+      0 0 12px rgba(0, 212, 255, 0.10);
+  }
+
+  /* ========== PERMISSION MATRIX ========== */
+  .permission-section-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .permission-matrix {
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .permission-matrix-header {
+    display: grid;
+    grid-template-columns: 1fr repeat(4, 72px);
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.20);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .permission-matrix-header .col-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .permission-matrix-header .col-perm {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Category row */
+  .perm-category {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .perm-category:last-child {
+    border-bottom: none;
+  }
+
+  .perm-category-header {
+    display: grid;
+    grid-template-columns: 1fr repeat(4, 72px);
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(0, 212, 255, 0.03);
+    cursor: pointer;
+    transition: background var(--duration-fast);
+    user-select: none;
+  }
+
+  .perm-category-header:hover {
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .perm-category-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #D0E4F0;
+  }
+
+  .perm-category-title .expand-icon {
+    color: var(--text-muted);
+    transition: transform var(--duration-fast);
+    font-size: 12px;
+  }
+
+  .perm-category-title .expand-icon.expanded {
+    transform: rotate(90deg);
+  }
+
+  .perm-category-title .cat-icon {
+    color: var(--neon-cyan);
+    font-size: 16px;
+  }
+
+  .perm-category-header .col-perm {
+    text-align: center;
+  }
+
+  /* Sub-item row */
+  .perm-items {
+    overflow: hidden;
+  }
+
+  .perm-item {
+    display: grid;
+    grid-template-columns: 1fr repeat(4, 72px);
+    align-items: center;
+    padding: 8px 16px 8px 48px;
+    border-top: 1px solid rgba(0, 212, 255, 0.04);
+    transition: background var(--duration-fast);
+  }
+
+  .perm-item:hover {
+    background: rgba(0, 212, 255, 0.03);
+  }
+
+  .perm-item-name {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .perm-item-name .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-disabled);
+    flex-shrink: 0;
+  }
+
+  .perm-item .col-perm {
+    text-align: center;
+  }
+
+  /* ========== CUSTOM CHECKBOX ========== */
+  .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-checkbox {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 1;
+    margin: 0;
+  }
+
+  .custom-checkbox .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    background: rgba(6, 18, 36, 0.8);
+    border: 1.5px solid var(--border-default);
+    border-radius: 4px;
+    transition: all var(--duration-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-checkbox .checkmark svg {
+    opacity: 0;
+    transform: scale(0.6);
+    transition: all var(--duration-fast);
+    color: var(--bg-base);
+  }
+
+  .custom-checkbox input:checked + .checkmark {
+    background: var(--neon-cyan);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.30);
+  }
+
+  .custom-checkbox input:checked + .checkmark svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .custom-checkbox:hover .checkmark {
+    border-color: var(--border-strong);
+  }
+
+  /* Category-level checkbox (indeterminate style) */
+  .custom-checkbox input:indeterminate + .checkmark {
+    background: rgba(0, 212, 255, 0.40);
+    border-color: var(--neon-cyan);
+  }
+
+  .custom-checkbox input:indeterminate + .checkmark svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ========== CONFIRM DIALOG ========== */
+  .confirm-dialog {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-modal);
+    width: 100%;
+    max-width: 420px;
+    box-shadow:
+      0 0 0 1px rgba(0, 212, 255, 0.08),
+      0 25px 80px rgba(0, 0, 0, 0.7),
+      0 0 60px rgba(0, 212, 255, 0.05);
+    animation: fade-up 0.2s cubic-bezier(0.0, 0.0, 0.2, 1) both;
+    position: relative;
+  }
+
+  .confirm-dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+    opacity: 0.5;
+  }
+
+  .confirm-body {
+    padding: 24px;
+    text-align: center;
+  }
+
+  .confirm-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 68, 102, 0.10);
+    border-radius: 50%;
+    color: var(--neon-red);
+  }
+
+  .confirm-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .confirm-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding: 0 24px 24px;
+  }
+
+  .btn-danger {
+    background: rgba(255, 68, 102, 0.15);
+    color: var(--neon-red);
+    border: 1px solid rgba(255, 68, 102, 0.30);
+  }
+
+  .btn-danger:hover {
+    background: rgba(255, 68, 102, 0.25);
+    border-color: rgba(255, 68, 102, 0.50);
+  }
+
+  /* Warning box */
+  .warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255, 179, 0, 0.06);
+    border: 1px solid rgba(255, 179, 0, 0.15);
+    border-left: 3px solid var(--neon-amber);
+    border-radius: 6px;
+    margin-top: 12px;
+  }
+
+  .warning-box-icon {
+    color: var(--neon-amber);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .warning-box-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ========== ANIMATIONS ========== */
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ========== DEMO LAYOUT ========== */
+  .demo-section {
+    margin-bottom: 60px;
+  }
+
+  .demo-title {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--neon-cyan);
+    letter-spacing: 0.06em;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    text-transform: uppercase;
+  }
+
+  .demo-screens {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+  }
+
+  .demo-note {
+    font-size: 12px;
+    color: var(--text-disabled);
+    font-style: italic;
+    margin-top: 8px;
+  }
+
+  /* SVG icons inline */
+  .icon { display: inline-flex; align-items: center; }
+</style>
+</head>
+<body>
+<div class="page-container">
+  <div class="design-label">Design Spec — 群組管理 Group Management</div>
+
+  <div class="demo-screens">
+
+    <!-- ======================================== -->
+    <!-- SCREEN 1: 群組列表頁面                     -->
+    <!-- ======================================== -->
+    <div class="demo-section">
+      <div class="demo-title">Screen 1 — 群組列表 /settings/groups</div>
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a href="#">系統設定</a>
+        <span class="sep">›</span>
+        <span class="current">群組管理</span>
+      </div>
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <div class="page-title">群組管理</div>
+            <div class="page-subtitle">管理使用者群組與權限設定</div>
+          </div>
+        </div>
+        <button class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          新增群組
+        </button>
+      </div>
+
+      <!-- Data Table Panel -->
+      <div class="panel">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 50%">群組名稱</th>
+              <th style="width: 25%">使用者數量</th>
+              <th style="width: 25%; text-align: right">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight: 500;">管理員群組</td>
+              <td><span class="user-count">3 位</span></td>
+              <td class="col-actions">
+                <div class="action-group">
+                  <button class="btn-icon" title="編輯">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon danger" title="刪除">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: 500;">業務群組</td>
+              <td><span class="user-count">5 位</span></td>
+              <td class="col-actions">
+                <div class="action-group">
+                  <button class="btn-icon" title="編輯">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon danger" title="刪除">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: 500;">會計群組</td>
+              <td><span class="user-count">2 位</span></td>
+              <td class="col-actions">
+                <div class="action-group">
+                  <button class="btn-icon" title="編輯">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon danger" title="刪除">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight: 500;">只看報價</td>
+              <td><span class="user-count">0 位</span></td>
+              <td class="col-actions">
+                <div class="action-group">
+                  <button class="btn-icon" title="編輯">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon danger" title="刪除">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <div class="pagination-info">共 4 筆，第 1/1 頁</div>
+          <div class="pagination-buttons">
+            <button class="page-btn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ======================================== -->
+    <!-- SCREEN 2: 新增群組 (Dialog)                -->
+    <!-- ======================================== -->
+    <div class="demo-section">
+      <div class="demo-title">Screen 2 — 新增群組 Dialog</div>
+
+      <div class="modal-overlay" style="position: relative; min-height: 700px; border-radius: var(--radius-panel); overflow: hidden;">
+        <div class="modal" style="position: relative; animation: none;">
+          <div class="modal-header">
+            <div class="modal-title">
+              <span class="modal-title-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </span>
+              新增群組
+            </div>
+            <button class="modal-close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Group Name -->
+            <div class="form-group">
+              <label class="form-label">群組名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input" placeholder="請輸入群組名稱">
+            </div>
+
+            <!-- Permission Matrix -->
+            <div class="form-group">
+              <div class="permission-section-label">權限設定</div>
+
+              <div class="permission-matrix">
+                <!-- Matrix Header -->
+                <div class="permission-matrix-header">
+                  <div class="col-label">功能項目</div>
+                  <div class="col-perm">查詢</div>
+                  <div class="col-perm">新增</div>
+                  <div class="col-perm">修改</div>
+                  <div class="col-perm">刪除</div>
+                </div>
+
+                <!-- Category: 報價管理 -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon expanded">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                      報價管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                  <div class="perm-items">
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>報價單</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>專案管理</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category: 客戶管理 -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon expanded">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      客戶管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                  <div class="perm-items">
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>客戶資料</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>客戶類型</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category: 發票管理 -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/>
+                      </svg>
+                      發票管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                  <!-- collapsed — no items shown -->
+                </div>
+
+                <!-- Category: 收款管理 -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
+                      收款管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                </div>
+
+                <!-- Category: 系統設定 -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                      </svg>
+                      系統設定
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              儲存
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="demo-note">權限分類可展開/收合。頂層 checkbox 控制該分類底下所有子項目的全選/取消。</p>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ======================================== -->
+    <!-- SCREEN 3: 編輯群組 (Dialog)                -->
+    <!-- ======================================== -->
+    <div class="demo-section">
+      <div class="demo-title">Screen 3 — 編輯群組 Dialog（部分權限已勾選）</div>
+
+      <div class="modal-overlay" style="position: relative; min-height: 500px; border-radius: var(--radius-panel); overflow: hidden;">
+        <div class="modal" style="position: relative; animation: none; max-width: 780px;">
+          <div class="modal-header">
+            <div class="modal-title">
+              <span class="modal-title-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </span>
+              編輯群組
+            </div>
+            <button class="modal-close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">群組名稱 <span class="required">*</span></label>
+              <input type="text" class="form-input" value="業務群組">
+            </div>
+
+            <div class="form-group">
+              <div class="permission-section-label">權限設定</div>
+              <div class="permission-matrix">
+                <div class="permission-matrix-header">
+                  <div class="col-label">功能項目</div>
+                  <div class="col-perm">查詢</div>
+                  <div class="col-perm">新增</div>
+                  <div class="col-perm">修改</div>
+                  <div class="col-perm">刪除</div>
+                </div>
+
+                <!-- 報價管理 — fully checked -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon expanded">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      報價管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                  <div class="perm-items">
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>報價單</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                    <div class="perm-item">
+                      <div class="perm-item-name"><span class="dot"></span>專案管理</div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                      <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 客戶管理 — query only -->
+                <div class="perm-category">
+                  <div class="perm-category-header">
+                    <div class="perm-category-title">
+                      <span class="expand-icon">▶</span>
+                      <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      客戶管理
+                    </div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox" checked><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                    <div class="col-perm"><div class="checkbox-wrapper"><label class="custom-checkbox"><input type="checkbox"><span class="checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span></label></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              儲存
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ======================================== -->
+    <!-- SCREEN 4: 刪除確認 Dialog                  -->
+    <!-- ======================================== -->
+    <div class="demo-section">
+      <div class="demo-title">Screen 4a — 刪除確認 Dialog（可刪除）</div>
+
+      <div class="modal-overlay" style="position: relative; min-height: 280px; border-radius: var(--radius-panel); overflow: hidden;">
+        <div class="confirm-dialog" style="animation: none;">
+          <div class="confirm-body">
+            <div class="confirm-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </div>
+            <div class="confirm-title">確認刪除群組</div>
+            <div class="confirm-message">確定要刪除「<strong>只看報價</strong>」群組嗎？<br>此操作無法復原。</div>
+          </div>
+          <div class="confirm-actions">
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-danger">確認刪除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-section" style="margin-top: 40px;">
+      <div class="demo-title">Screen 4b — 刪除警告 Dialog（群組有使用者，無法刪除）</div>
+
+      <div class="modal-overlay" style="position: relative; min-height: 320px; border-radius: var(--radius-panel); overflow: hidden;">
+        <div class="confirm-dialog" style="animation: none;">
+          <div class="confirm-body" style="position: relative;">
+            <!-- Change top line to amber for warning -->
+            <div style="position: absolute; top: 0; left: 25%; right: 25%; height: 1px; background: linear-gradient(90deg, transparent, var(--neon-amber), transparent); opacity: 0.5;"></div>
+            <div class="confirm-icon" style="background: rgba(255, 179, 0, 0.10); color: var(--neon-amber);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="confirm-title">無法刪除群組</div>
+            <div class="confirm-message">群組「<strong>管理員群組</strong>」目前有 <strong>3 位</strong>使用者，<br>請先將使用者移至其他群組後再刪除。</div>
+          </div>
+          <div class="confirm-actions">
+            <button class="btn btn-ghost">知道了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

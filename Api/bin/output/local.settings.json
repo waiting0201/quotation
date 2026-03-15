@@ -1,0 +1,13 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "JwtSecret": "weypro-quotation-system-jwt-secret-key-2024",
+        "ConnectionStrings:DefaultConnection": "Server=(local);Database=quotation;User Id=sa;Password=twvsjp0205;TrustServerCertificate=true"
+    },
+    "Host": {
+        "CORS": "http://localhost:4200",
+        "CORSCredentials": true
+    }
+}
