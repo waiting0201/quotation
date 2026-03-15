@@ -95,14 +95,22 @@ public class RouteTable
         Register<CustomerController>("DELETE", "customers/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
 
         // ── Invoices ──────────────────────────────────────────────────────────
-        // ⚠ invoices/quotations/{customerId} 必須在 invoices/{id} 之前，
-        //   否則路由器會將 "quotations" 當作 {id} 參數來解析。
+        // ⚠ 具體路由必須排在萬用路由之前，否則 {id} 段會吸走具體片段：
+        //   - invoices/quotations/{customerId}  → 具體第一段，最優先
+        //   - invoices/{id}/pdf                 → 具體第三段，排在 invoices/{id} 之前
+        //   - invoices/{id}                     → 最後才比對
         Register<InvoiceController>("GET",    "invoices/quotations/{customerId}", (c, ctx) => c.GetCustomerQuotations(ctx, ParseInt(ctx, "customerId")));
+        Register<InvoiceController>("GET",    "invoices/{id}/pdf",                (c, ctx) => c.GetPdf(ctx, ParseGuid(ctx, "id")));
         Register<InvoiceController>("GET",    "invoices",                         (c, ctx) => c.GetList(ctx));
         Register<InvoiceController>("POST",   "invoices",                         (c, ctx) => c.Create(ctx));
         Register<InvoiceController>("GET",    "invoices/{id}",                    (c, ctx) => c.GetById(ctx, ParseGuid(ctx, "id")));
         Register<InvoiceController>("PUT",    "invoices/{id}",                    (c, ctx) => c.Update(ctx, ParseGuid(ctx, "id")));
         Register<InvoiceController>("DELETE", "invoices/{id}",                    (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));
+
+        // ── Incomes ───────────────────────────────────────────────────────────
+        Register<IncomeController>("GET",    "incomes",      (c, ctx) => c.GetList(ctx));
+        Register<IncomeController>("POST",   "incomes",      (c, ctx) => c.Create(ctx));
+        Register<IncomeController>("DELETE", "incomes/{id}", (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));
 
         // ── Lookups ───────────────────────────────────────────────────────────
         Register<LookupController>("GET", "lookups/permissions", (c, ctx) => c.GetPermissions(ctx));

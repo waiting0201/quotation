@@ -14,15 +14,18 @@ namespace QuotationApi.Controllers;
 /// GET    /api/invoices/{id}                         — 取得單一發票詳情（含明細）
 /// PUT    /api/invoices/{id}                         — 更新發票
 /// DELETE /api/invoices/{id}                         — 刪除發票（已關聯收款時回傳 409）
+/// GET    /api/invoices/{id}/pdf                     — 匯出請款單 PDF（QuestPDF）
 /// GET    /api/invoices/quotations/{customerId}      — 取得客戶的報價單（供明細下拉選單）
 /// </summary>
 public class InvoiceController
 {
     private readonly InvoiceService _invoiceService;
+    private readonly InvoicePdfService _pdfService;
 
-    public InvoiceController(InvoiceService invoiceService)
+    public InvoiceController(InvoiceService invoiceService, InvoicePdfService pdfService)
     {
         _invoiceService = invoiceService;
+        _pdfService     = pdfService;
     }
 
     // ── GET /api/invoices ─────────────────────────────────────────────────
@@ -135,6 +138,24 @@ public class InvoiceController
             return context.Conflict(error);
 
         return context.NoContent();
+    }
+
+    // ── GET /api/invoices/{id}/pdf ────────────────────────────────────────
+
+    /// <summary>
+    /// 匯出請款單 PDF。
+    /// 使用 QuestPDF 動態產生 A4 請款單，包含明細表格與公司/銀行資訊。
+    /// </summary>
+    public async Task<IActionResult> GetPdf(RouteContext context, Guid id)
+    {
+        if (id == Guid.Empty)
+            return context.BadRequest("無效的請款 ID。");
+
+        var pdfBytes = await _pdfService.GeneratePdfAsync(id);
+        if (pdfBytes == null)
+            return context.NotFound($"找不到 ID 為 '{id}' 的請款。");
+
+        return context.File(pdfBytes, "application/pdf", $"invoice-{id}.pdf");
     }
 
     // ── GET /api/invoices/quotations/{customerId} ─────────────────────────

@@ -5,12 +5,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using QuestPDF.Infrastructure;
 using QuotationApi.Controllers;
 using QuotationApi.Helpers;
 using QuotationApi.Middleware;
 using QuotationApi.Models;
 using QuotationApi.Router;
 using QuotationApi.Services;
+
+// QuestPDF Community License（開源專案免費使用）
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -57,7 +61,9 @@ builder.Services.AddScoped<CustomerTypeService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<HostService>();
+builder.Services.AddScoped<IncomeService>();
 builder.Services.AddScoped<InvoiceService>();
+builder.Services.AddScoped<InvoicePdfService>();
 builder.Services.AddScoped<LookupService>();
 builder.Services.AddScoped<UserService>();
 
@@ -70,6 +76,7 @@ builder.Services.AddScoped<CustomerTypeController>();
 builder.Services.AddScoped<DashboardController>();
 builder.Services.AddScoped<GroupController>();
 builder.Services.AddScoped<HostController>();
+builder.Services.AddScoped<IncomeController>();
 builder.Services.AddScoped<InvoiceController>();
 builder.Services.AddScoped<LookupController>();
 builder.Services.AddScoped<UserController>();

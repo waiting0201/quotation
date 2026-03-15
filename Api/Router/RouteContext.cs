@@ -79,6 +79,15 @@ public class RouteContext
     public IActionResult InternalServerError(string message = "Internal server error")
         => new ObjectResult(ApiErrorResponse.Create("INTERNAL_ERROR", message)) { StatusCode = 500 };
 
+    /// <summary>
+    /// 回傳二進位檔案內容，設定 Content-Type 與 Content-Disposition 標頭。
+    /// </summary>
+    public IActionResult File(byte[] content, string contentType, string fileName)
+        => new FileContentResult(content, contentType)
+        {
+            FileDownloadName = fileName
+        };
+
     // ── 請求輔助方法 ──────────────────────────────────────────────────────────
 
     /// <summary>

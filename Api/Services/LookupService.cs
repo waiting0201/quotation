@@ -48,6 +48,7 @@ public class LookupService
             LimId = l.Limid,
             Key = l.Key ?? string.Empty,
             Value = l.Value ?? string.Empty,
+            Icon = l.Icon,
             ParentId = l.Parentid
         }).ToList();
 
