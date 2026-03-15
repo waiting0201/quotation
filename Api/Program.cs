@@ -52,9 +52,12 @@ builder.Services.AddSingleton<JwtHelper>();
 // Services 依賴 DbContext（Scoped），所以必須也是 Scoped
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerTypeService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<HostService>();
+builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<LookupService>();
 builder.Services.AddScoped<UserService>();
 
@@ -62,9 +65,12 @@ builder.Services.AddScoped<UserService>();
 // Controllers 依賴 Service（Scoped），所以必須也是 Scoped
 
 builder.Services.AddScoped<AuthController>();
+builder.Services.AddScoped<CustomerController>();
+builder.Services.AddScoped<CustomerTypeController>();
 builder.Services.AddScoped<DashboardController>();
 builder.Services.AddScoped<GroupController>();
 builder.Services.AddScoped<HostController>();
+builder.Services.AddScoped<InvoiceController>();
 builder.Services.AddScoped<LookupController>();
 builder.Services.AddScoped<UserController>();
 

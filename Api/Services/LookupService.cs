@@ -14,6 +14,22 @@ public class LookupService
     }
 
     /// <summary>
+    /// 取得國家列表，依名稱排序。
+    /// </summary>
+    public async Task<List<LookupItemDto>> GetCountriesAsync()
+    {
+        return await _db.Countries
+            .AsNoTracking()
+            .OrderBy(c => c.Title)
+            .Select(c => new LookupItemDto
+            {
+                Id = c.Countryid,
+                Title = c.Title ?? string.Empty
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
     /// 取得權限樹（排除 limid == 1 的根節點），以 parentId 建構階層結構。
     /// 頂層節點 parentId == 0，子項目掛在對應的頂層節點下。
     /// </summary>

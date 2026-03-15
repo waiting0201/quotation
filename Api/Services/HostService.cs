@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Host;
 using QuotationApi.Models;
 
@@ -28,13 +29,26 @@ public class HostService
     // ── 查詢 ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得維護清單，可選擇依項目名稱關鍵字搜尋。
-    /// 使用 Dapper 直接執行 SQL，避免 EF Core 在簡單查詢上產生額外 round-trip。
+    /// 取得維護清單（分頁），可選擇依項目名稱關鍵字搜尋。
+    /// 使用 Dapper 搭配 COUNT + OFFSET/FETCH 完成，避免 EF Core 在簡單查詢上產生額外 round-trip。
     /// </summary>
+    /// <param name="page">頁碼（1-based）</param>
+    /// <param name="pageSize">每頁筆數</param>
     /// <param name="search">搜尋關鍵字（null 或空字串時回傳全部）</param>
-    public async Task<List<HostListDto>> GetListAsync(string? search)
+    public async Task<PaginatedResponse<HostListDto>> GetListAsync(int page, int pageSize, string? search)
     {
-        const string baseSql = """
+        var hasSearch = !string.IsNullOrWhiteSpace(search);
+        var whereClause = hasSearch ? "WHERE h.item LIKE @Search" : string.Empty;
+
+        object param = hasSearch
+            ? new { Search = $"%{search!.Trim()}%", Offset = (page - 1) * pageSize, PageSize = pageSize }
+            : new { Offset = (page - 1) * pageSize, PageSize = pageSize };
+
+        // 先計算符合條件的總筆數
+        var countSql = $"SELECT COUNT(*) FROM hosts h {whereClause}";
+        var totalCount = await _dapper.ExecuteScalarAsync<int>(countSql, param);
+
+        var dataSql = $"""
             SELECT
                 h.hostid      AS HostId,
                 h.item        AS Item,
@@ -42,25 +56,13 @@ public class HostService
                 h.startdate   AS StartDate,
                 h.expiredate  AS ExpireDate
             FROM hosts h
+            {whereClause}
+            ORDER BY h.expiredate, h.item
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
             """;
 
-        string sql;
-        object? param;
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            // 使用參數化 LIKE 防範 SQL Injection
-            sql = baseSql + " WHERE h.item LIKE @Search ORDER BY h.expiredate, h.item";
-            param = new { Search = $"%{search.Trim()}%" };
-        }
-        else
-        {
-            sql = baseSql + " ORDER BY h.expiredate, h.item";
-            param = null;
-        }
-
-        var results = await _dapper.QueryAsync<HostListDto>(sql, param);
-        return results.AsList();
+        var items = await _dapper.QueryAsync<HostListDto>(dataSql, param);
+        return PaginatedResponse<HostListDto>.Create(items.AsList(), page, pageSize, totalCount);
     }
 
     /// <summary>

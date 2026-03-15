@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Settings;
 using QuotationApi.Models;
 
@@ -27,24 +28,30 @@ public class GroupService
     // ── 查詢 ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得所有群組清單，附帶各群組的使用者人數。
-    /// 使用 Dapper 避免 EF Core 在簡單聚合查詢上產生不必要的 round-trip。
+    /// 取得群組清單（分頁），附帶各群組的使用者人數。
+    /// 使用 Dapper 搭配 COUNT + OFFSET/FETCH 完成，避免 EF Core 在簡單聚合查詢上產生不必要的 round-trip。
     /// </summary>
-    public async Task<List<GroupListDto>> GetListAsync()
+    public async Task<PaginatedResponse<GroupListDto>> GetListAsync(int page, int pageSize)
     {
-        const string sql = """
+        var param = new { Offset = (page - 1) * pageSize, PageSize = pageSize };
+
+        const string countSql = "SELECT COUNT(*) FROM [group] g";
+        var totalCount = await _dapper.ExecuteScalarAsync<int>(countSql);
+
+        const string dataSql = """
             SELECT
-                g.groupid  AS GroupId,
-                g.title    AS Title,
+                g.groupid       AS GroupId,
+                g.title         AS Title,
                 COUNT(u.userid) AS UserCount
             FROM [group] g
             LEFT JOIN [user] u ON u.groupid = g.groupid
             GROUP BY g.groupid, g.title
             ORDER BY g.title
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
             """;
 
-        var results = await _dapper.QueryAsync<GroupListDto>(sql);
-        return results.AsList();
+        var items = await _dapper.QueryAsync<GroupListDto>(dataSql, param);
+        return PaginatedResponse<GroupListDto>.Create(items.AsList(), page, pageSize, totalCount);
     }
 
     /// <summary>

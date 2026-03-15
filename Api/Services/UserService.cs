@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Settings;
 using QuotationApi.Helpers;
 using QuotationApi.Models;
@@ -34,12 +35,26 @@ public class UserService
     // ── 查詢 ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得所有使用者清單，LEFT JOIN group 取得群組名稱。
-    /// 使用 Dapper 避免 EF Core 在簡單聯查上產生不必要的 round-trip。
+    /// 取得使用者清單（分頁），LEFT JOIN group 取得群組名稱。
+    /// 支援以 name 或 email 關鍵字搜尋。
+    /// 使用 Dapper 搭配 COUNT + OFFSET/FETCH 完成，避免 EF Core 在簡單聯查上產生不必要的 round-trip。
     /// </summary>
-    public async Task<List<UserListDto>> GetListAsync()
+    public async Task<PaginatedResponse<UserListDto>> GetListAsync(int page, int pageSize, string? search)
     {
-        const string sql = """
+        var hasSearch = !string.IsNullOrWhiteSpace(search);
+        var whereClause = hasSearch
+            ? "WHERE u.name LIKE @Search OR u.email LIKE @Search"
+            : string.Empty;
+
+        object param = hasSearch
+            ? new { Search = $"%{search!.Trim()}%", Offset = (page - 1) * pageSize, PageSize = pageSize }
+            : new { Offset = (page - 1) * pageSize, PageSize = pageSize };
+
+        // 先計算符合條件的總筆數
+        var countSql = $"SELECT COUNT(*) FROM [user] u {whereClause}";
+        var totalCount = await _dapper.ExecuteScalarAsync<int>(countSql, param);
+
+        var dataSql = $"""
             SELECT
                 u.userid      AS UserId,
                 u.name        AS Name,
@@ -50,11 +65,13 @@ public class UserService
                 u.updatetime  AS UpdateTime
             FROM [user] u
             LEFT JOIN [group] g ON g.groupid = u.groupid
+            {whereClause}
             ORDER BY u.name
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
             """;
 
-        var results = await _dapper.QueryAsync<UserListDto>(sql);
-        return results.AsList();
+        var items = await _dapper.QueryAsync<UserListDto>(dataSql, param);
+        return PaginatedResponse<UserListDto>.Create(items.AsList(), page, pageSize, totalCount);
     }
 
     /// <summary>

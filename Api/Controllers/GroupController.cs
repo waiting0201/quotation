@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Settings;
 using QuotationApi.Router;
 using QuotationApi.Services;
@@ -26,12 +27,15 @@ public class GroupController
     // ── GET /api/groups ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得所有群組清單，附帶各群組的使用者人數統計。
+    /// 取得群組清單（分頁），附帶各群組的使用者人數統計。
     /// </summary>
     public async Task<IActionResult> GetList(RouteContext context)
     {
-        var list = await _groupService.GetListAsync();
-        return context.Ok(list);
+        var page     = int.TryParse(context.Request.Query["page"].FirstOrDefault(), out var p) && p > 0 ? p : 1;
+        var pageSize = int.TryParse(context.Request.Query["pageSize"].FirstOrDefault(), out var ps) && ps > 0 && ps <= 100 ? ps : 20;
+
+        var result = await _groupService.GetListAsync(page, pageSize);
+        return context.OkPaged(result);
     }
 
     // ── GET /api/groups/{id} ─────────────────────────────────────────────────

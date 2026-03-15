@@ -18,4 +18,10 @@ public class LookupController
         var tree = await _lookupService.GetPermissionTreeAsync();
         return context.Ok(tree);
     }
+
+    public async Task<IActionResult> GetCountries(RouteContext context)
+    {
+        var countries = await _lookupService.GetCountriesAsync();
+        return context.Ok(countries);
+    }
 }

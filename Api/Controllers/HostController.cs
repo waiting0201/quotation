@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Host;
 using QuotationApi.Router;
 using QuotationApi.Services;
@@ -26,13 +27,16 @@ public class HostController
     // ── GET /api/hosts ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得所有維護項目清單，可選填 ?search= 依項目名稱關鍵字過濾。
+    /// 取得維護項目清單（分頁），可選填 ?page=&pageSize=&search= 依項目名稱關鍵字過濾。
     /// </summary>
     public async Task<IActionResult> GetList(RouteContext context)
     {
-        var search = context.Request.Query["search"].FirstOrDefault();
-        var list = await _hostService.GetListAsync(search);
-        return context.Ok(list);
+        var page     = int.TryParse(context.Request.Query["page"].FirstOrDefault(), out var p) && p > 0 ? p : 1;
+        var pageSize = int.TryParse(context.Request.Query["pageSize"].FirstOrDefault(), out var ps) && ps > 0 && ps <= 100 ? ps : 20;
+        var search   = context.Request.Query["search"].FirstOrDefault();
+
+        var result = await _hostService.GetListAsync(page, pageSize, search);
+        return context.OkPaged(result);
     }
 
     // ── GET /api/hosts/{id} ──────────────────────────────────────────────────

@@ -80,8 +80,33 @@ public class RouteTable
         Register<HostController>("PUT",    "hosts/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
         Register<HostController>("DELETE", "hosts/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
 
+        // ── Customer Types ────────────────────────────────────────────────────
+        Register<CustomerTypeController>("GET",    "customer-types",      (c, ctx) => c.GetList(ctx));
+        Register<CustomerTypeController>("POST",   "customer-types",      (c, ctx) => c.Create(ctx));
+        Register<CustomerTypeController>("GET",    "customer-types/{id}", (c, ctx) => c.GetById(ctx, ParseInt(ctx, "id")));
+        Register<CustomerTypeController>("PUT",    "customer-types/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
+        Register<CustomerTypeController>("DELETE", "customer-types/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
+
+        // ── Customers ─────────────────────────────────────────────────────────
+        Register<CustomerController>("GET",    "customers",      (c, ctx) => c.GetList(ctx));
+        Register<CustomerController>("POST",   "customers",      (c, ctx) => c.Create(ctx));
+        Register<CustomerController>("GET",    "customers/{id}", (c, ctx) => c.GetById(ctx, ParseInt(ctx, "id")));
+        Register<CustomerController>("PUT",    "customers/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
+        Register<CustomerController>("DELETE", "customers/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
+
+        // ── Invoices ──────────────────────────────────────────────────────────
+        // ⚠ invoices/quotations/{customerId} 必須在 invoices/{id} 之前，
+        //   否則路由器會將 "quotations" 當作 {id} 參數來解析。
+        Register<InvoiceController>("GET",    "invoices/quotations/{customerId}", (c, ctx) => c.GetCustomerQuotations(ctx, ParseInt(ctx, "customerId")));
+        Register<InvoiceController>("GET",    "invoices",                         (c, ctx) => c.GetList(ctx));
+        Register<InvoiceController>("POST",   "invoices",                         (c, ctx) => c.Create(ctx));
+        Register<InvoiceController>("GET",    "invoices/{id}",                    (c, ctx) => c.GetById(ctx, ParseGuid(ctx, "id")));
+        Register<InvoiceController>("PUT",    "invoices/{id}",                    (c, ctx) => c.Update(ctx, ParseGuid(ctx, "id")));
+        Register<InvoiceController>("DELETE", "invoices/{id}",                    (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));
+
         // ── Lookups ───────────────────────────────────────────────────────────
         Register<LookupController>("GET", "lookups/permissions", (c, ctx) => c.GetPermissions(ctx));
+        Register<LookupController>("GET", "lookups/countries",   (c, ctx) => c.GetCountries(ctx));
     }
 
     // ── 輔助方法 ────────────────────────────────────────────────────────────

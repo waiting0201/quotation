@@ -52,6 +52,9 @@ public class RouteContext
     public IActionResult Ok<T>(T data)
         => new OkObjectResult(ApiResponse<T>.Success(data));
 
+    public IActionResult OkPaged<T>(PaginatedResponse<T> paged)
+        => new OkObjectResult(paged);
+
     public IActionResult Created<T>(T data)
         => new ObjectResult(ApiResponse<T>.Success(data)) { StatusCode = 201 };
 

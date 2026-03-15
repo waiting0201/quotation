@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using QuotationApi.DTOs.Common;
 using QuotationApi.DTOs.Settings;
 using QuotationApi.Router;
 using QuotationApi.Services;
@@ -27,12 +28,17 @@ public class UserController
     // ── GET /api/users ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// 取得所有使用者清單，附帶所屬群組名稱。
+    /// 取得使用者清單（分頁），附帶所屬群組名稱。
+    /// 可選填 ?page=&pageSize=&search= 依姓名或 Email 關鍵字過濾。
     /// </summary>
     public async Task<IActionResult> GetList(RouteContext context)
     {
-        var list = await _userService.GetListAsync();
-        return context.Ok(list);
+        var page     = int.TryParse(context.Request.Query["page"].FirstOrDefault(), out var p) && p > 0 ? p : 1;
+        var pageSize = int.TryParse(context.Request.Query["pageSize"].FirstOrDefault(), out var ps) && ps > 0 && ps <= 100 ? ps : 20;
+        var search   = context.Request.Query["search"].FirstOrDefault();
+
+        var result = await _userService.GetListAsync(page, pageSize, search);
+        return context.OkPaged(result);
     }
 
     // ── GET /api/users/{id} ──────────────────────────────────────────────────
