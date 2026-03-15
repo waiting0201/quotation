@@ -19,6 +19,31 @@
 
 > **重要：** 遇到任何 UI/UX 設計決策，必須先使用 `/frontend-design` skill 完成設計，再進行實作。
 
+## 本機開發環境
+
+### Azurite（Azure Storage 模擬器）
+
+Azure Functions 執行時需要 Azure Storage 連線（即使只用 HTTP Trigger），本機開發使用 Azurite 模擬。
+
+**安裝（一次性）：**
+```bash
+npm install -g azurite
+```
+
+**每次開發前啟動：**
+```bash
+azurite --silent --location .azurite
+```
+或在 VSCode 按 `Ctrl+Shift+P` → `Azurite: Start`。
+
+**`local.settings.json` 設定：**
+```json
+"AzureWebJobsStorage": "UseDevelopmentStorage=true"
+```
+
+> 若未啟動 Azurite，Azure Functions 會報 `Unhealthy: Unable to access AzureWebJobsStorage`。
+> 設為 `""` 或 `"none"` 在新版 Core Tools 中無效，必須實際啟動 Azurite。
+
 ## 技術棧
 
 ### 前端
@@ -849,6 +874,42 @@ AiPromptBuilder 組裝 System Prompt：
 | **Phase 4** | 客戶洞察（交易摘要、趨勢分析） | 中 |
 | **Phase 5** | 文件解析（RFQ/採購單自動擷取） | 低 |
 | **Phase 6** | 報價信件產生（中/英文客製郵件） | 低 |
+
+## DI 生命週期規則（重要）
+
+以下規則攸關效能，違反會導致每次 HTTP 請求產生大量不必要的物件建立。
+
+### Singleton（應用程式啟動時建立一次）
+
+| 類別 | 原因 |
+|------|------|
+| `RouteTable` | 路由定義不會改變，Controller 透過 `HandlerFactory` 延遲解析 |
+| `RouteHandler` | 持有預編譯的 Regex，只需編譯一次 |
+| `MiddlewarePipeline` | 管線組成不會改變 |
+| `CorsMiddleware` | 無狀態，thread-safe |
+| `ErrorHandlingMiddleware` | 僅依賴 ILogger（thread-safe） |
+| `JwtAuthMiddleware` | 僅依賴 JwtHelper（Singleton）+ ILogger |
+| `JwtHelper` | 無狀態工具類別 |
+
+### Scoped（每次 HTTP 請求建立一次）
+
+| 類別 | 原因 |
+|------|------|
+| `*Controller` | 依賴 Scoped 的 Service |
+| `*Service` | 依賴 Scoped 的 DbContext |
+| `QuotationDbContext` | EF Core DbContext 必須是 Scoped（Change Tracker 非 thread-safe） |
+
+### 常見錯誤（禁止）
+
+- **❌ RouteTable / RouteHandler 改為 Scoped** — 會導致每次請求解析所有 Controller + Service，2 筆資料的查詢都會變慢
+- **❌ Singleton 類別的建構子注入 Scoped 服務** — 會造成 Captive Dependency（被捕獲的依賴），Scoped 實例被 Singleton 永久持有，跨請求共用 DbContext 導致資料不一致
+- **❌ 新增 Middleware 時在建構子注入 DbContext** — Middleware 是 Singleton，若需要 Scoped 服務應在 `InvokeAsync` 中透過 `context.Request.HttpContext.RequestServices.GetRequiredService<T>()` 取得
+
+### 新增 Controller 時的步驟
+
+1. 在 `Program.cs` 以 `AddScoped` 註冊 Controller 和 Service
+2. 在 `RouteTable.RegisterRoutes()` 中用 `Register<TController>(...)` 註冊路由
+3. **不需要**修改 RouteTable 的建構子 — Controller 由 HandlerFactory 在請求時延遲解析
 
 ## 命名慣例
 

@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Azure Storage emulator
+.azurite/
+
 # System files
 .DS_Store
 Thumbs.db

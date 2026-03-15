@@ -407,3 +407,4 @@ D:\websystems\quotation.weypro.com\Api\bin\output\runtimes\win\lib\net6.0\System
 D:\websystems\quotation.weypro.com\Api\bin\output\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
 D:\websystems\quotation.weypro.com\Api\bin\output\runtimes\win\lib\net9.0\System.Text.Encodings.Web.dll
 D:\websystems\quotation.weypro.com\Api\bin\output\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
+D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\QuotationApi.sourcelink.json

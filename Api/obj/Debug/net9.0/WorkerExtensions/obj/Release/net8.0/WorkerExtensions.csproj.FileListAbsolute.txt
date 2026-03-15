@@ -64,3 +64,4 @@ D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\WorkerExtensions\obj\Rel
 D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\WorkerExtensions\obj\Release\net8.0\refint\Microsoft.Azure.Functions.Worker.Extensions.dll
 D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\WorkerExtensions\obj\Release\net8.0\Microsoft.Azure.Functions.Worker.Extensions.pdb
 D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\WorkerExtensions\obj\Release\net8.0\ref\Microsoft.Azure.Functions.Worker.Extensions.dll
+D:\websystems\quotation.weypro.com\Api\obj\Debug\net9.0\WorkerExtensions\obj\Release\net8.0\WorkerExtensions.sourcelink.json

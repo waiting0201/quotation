@@ -5,7 +5,18 @@ using QuotationApi.DTOs.Common;
 namespace QuotationApi.Router;
 
 /// <summary>
-/// 解析請求路由、比對路由表、提取路徑參數、呼叫 controller handler
+/// 解析請求路由、比對路由表、提取路徑參數、呼叫 controller handler。
+///
+/// ╔══════════════════════════════════════════════════════════════════════╗
+/// ║  ⚠ 設計決策：此類別必須註冊為 Singleton                              ║
+/// ║                                                                    ║
+/// ║  RouteHandler 在建構時預編譯所有路由 Regex（PrecompilePatterns），     ║
+/// ║  這些 Regex 不會改變，應該只編譯一次。                                ║
+/// ║                                                                    ║
+/// ║  請求時透過 IServiceProvider 延遲解析 Controller，                   ║
+/// ║  IServiceProvider 由 ApiFunction 傳入（每次請求的 scoped provider）。 ║
+/// ║  RouteHandler 本身不持有任何 Scoped 依賴，可安全作為 Singleton。       ║
+/// ╚══════════════════════════════════════════════════════════════════════╝
 /// </summary>
 public class RouteHandler
 {
@@ -24,7 +35,12 @@ public class RouteHandler
     /// 依 HTTP method + route 找到對應 handler 並執行；
     /// 找不到時回傳 404，方法不符時回傳 405。
     /// </summary>
-    public async Task<IActionResult> HandleAsync(RouteContext context)
+    /// <param name="context">請求上下文</param>
+    /// <param name="serviceProvider">
+    /// 當前請求的 scoped IServiceProvider，用於延遲解析 Controller。
+    /// 必須來自當前 HTTP 請求的 scope，不可使用 root provider。
+    /// </param>
+    public async Task<IActionResult> HandleAsync(RouteContext context, IServiceProvider serviceProvider)
     {
         var method = context.Request.Method.ToUpperInvariant();
         var route = context.Route.Trim('/');
@@ -69,7 +85,8 @@ public class RouteHandler
             context.PathParams[paramName] = paramValue;
         }
 
-        return await matched.Def.Handler(context);
+        // 透過 HandlerFactory 延遲解析 Controller 並執行 handler
+        return await matched.Def.HandlerFactory(serviceProvider, context);
     }
 
     // ── 私有方法 ────────────────────────────────────────────────────────────
@@ -89,7 +106,7 @@ public class RouteHandler
     /// <summary>
     /// 將路由樣式轉換為 Regex 並提取參數名稱列表
     /// 例如："customers/{id}/orders/{orderId}"
-    ///   -> Regex: ^customers/(?<id>[^/]+)/orders/(?<orderId>[^/]+)$
+    ///   -> Regex: ^customers/(?&lt;id&gt;[^/]+)/orders/(?&lt;orderId&gt;[^/]+)$
     ///   -> ParamNames: ["id", "orderId"]
     /// </summary>
     private static (Regex Regex, List<string> ParamNames) CompilePattern(string pattern)

@@ -42,12 +42,17 @@ public class ApiFunction
 
         var context = new RouteContext(req, route);
 
+        // 取得當前請求的 scoped IServiceProvider，用於延遲解析 Controller。
+        // ⚠ 必須使用 HttpContext.RequestServices（scoped），不可使用 root provider，
+        //   否則 DbContext 等 scoped 服務會跨請求共用，導致資料不一致。
+        var scopedProvider = req.HttpContext.RequestServices;
+
         // 執行 middleware pipeline，最後呼叫 RouteHandler
         await _pipeline.ExecuteAsync(context, async () =>
         {
             // Terminal handler：middleware 全部通過後才執行路由分發
             // OPTIONS 已在 CorsMiddleware 短路，這裡不會收到
-            context.Result = await _routeHandler.HandleAsync(context);
+            context.Result = await _routeHandler.HandleAsync(context, scopedProvider);
         });
 
         // 若 middleware 短路（如 CORS preflight 回 204），Result 可能為 null

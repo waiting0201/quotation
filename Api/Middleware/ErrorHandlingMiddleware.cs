@@ -11,6 +11,8 @@ namespace QuotationApi.Middleware;
 /// - 所有未被處理的例外在此捕獲，回傳標準 JSON 錯誤格式
 /// - 不對外暴露 stack trace 或內部細節
 /// - 依例外類型回傳適當的 HTTP status code
+///
+/// 僅依賴 ILogger（thread-safe），註冊為 Singleton。
 /// </summary>
 public class ErrorHandlingMiddleware : IMiddleware
 {

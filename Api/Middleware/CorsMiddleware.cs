@@ -5,6 +5,8 @@ namespace QuotationApi.Middleware;
 /// <summary>
 /// 處理 CORS：允許 Angular 開發伺服器 (localhost:4200) 跨域請求。
 /// 生產環境應從 config 讀取允許的 origin 清單。
+///
+/// 此 middleware 為無狀態（thread-safe），註冊為 Singleton。
 /// </summary>
 public class CorsMiddleware : IMiddleware
 {

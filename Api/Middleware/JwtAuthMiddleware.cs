@@ -11,6 +11,8 @@ namespace QuotationApi.Middleware;
 /// - 從 Authorization header 提取 Bearer token
 /// - 驗證 token 有效性並設定 context.CurrentUser
 /// - 公開路由（public routes）略過驗證
+///
+/// 僅依賴 JwtHelper（Singleton）+ ILogger（thread-safe），註冊為 Singleton。
 /// </summary>
 public class JwtAuthMiddleware : IMiddleware
 {

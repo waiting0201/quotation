@@ -31,10 +31,11 @@ var connectionString =
 builder.Services.AddDbContext<QuotationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
-        // 網路不穩時自動重試，最多 5 次，每次間隔 30 秒
+        // 網路不穩時自動重試（Azure SQL 瞬斷保護）
+        // ⚠ maxRetryDelay 設 5 秒即可，30 秒對本機開發太久且會讓首次連線逾時感覺更嚴重
         sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
             errorNumbersToAdd: null);
     }));
 
@@ -48,37 +49,59 @@ builder.Services.AddTransient<IDbConnection>(_ =>
 builder.Services.AddSingleton<JwtHelper>();
 
 // ── Services ──────────────────────────────────────────────────────────────
+// Services 依賴 DbContext（Scoped），所以必須也是 Scoped
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<HostService>();
 builder.Services.AddScoped<LookupService>();
 builder.Services.AddScoped<UserService>();
 
 // ── Controllers ───────────────────────────────────────────────────────────
+// Controllers 依賴 Service（Scoped），所以必須也是 Scoped
 
 builder.Services.AddScoped<AuthController>();
 builder.Services.AddScoped<DashboardController>();
 builder.Services.AddScoped<GroupController>();
+builder.Services.AddScoped<HostController>();
 builder.Services.AddScoped<LookupController>();
 builder.Services.AddScoped<UserController>();
 
 // ── Router ────────────────────────────────────────────────────────────────
+//
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  ⚠ DI 生命週期設計原則                                                 ║
+// ║                                                                        ║
+// ║  RouteTable + RouteHandler + MiddlewarePipeline 必須是 Singleton：      ║
+// ║  - 路由表和正則表達式只需建構/編譯一次                                    ║
+// ║  - Middleware 管線在應用程式生命週期中不會改變                             ║
+// ║  - 避免每次 HTTP 請求都重建路由表、重新編譯 Regex、重新解析所有 Controller  ║
+// ║                                                                        ║
+// ║  Controller 實例透過 RouteTable 的 HandlerFactory 延遲解析，             ║
+// ║  使用 HttpContext.RequestServices（scoped provider），                   ║
+// ║  確保每次請求取得的是正確 scope 的 DbContext 等服務。                      ║
+// ║                                                                        ║
+// ║  ❌ 常見錯誤：把 RouteTable 改為 Scoped（因為它「用到」Controller）        ║
+// ║     → 這會導致每次請求解析所有 Controller + Service，嚴重影響效能         ║
+// ║  ✅ 正確做法：RouteTable 存 HandlerFactory，請求時才解析需要的 Controller  ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
 
-// RouteTable 依賴 controllers，需要 scoped 或讓 DI 解析
-// 這裡以 scoped 處理，讓每個請求都取得新的 RouteTable 實例
-builder.Services.AddScoped<RouteTable>();
-builder.Services.AddScoped<RouteHandler>();
+builder.Services.AddSingleton<RouteTable>();
+builder.Services.AddSingleton<RouteHandler>();
 
 // ── Middleware ────────────────────────────────────────────────────────────
+//
+// 所有 middleware 必須是 thread-safe（無狀態或僅依賴 Singleton 服務）。
+// 若未來新增的 middleware 需要 Scoped 依賴（如 DbContext），
+// 應在 InvokeAsync 中透過 context.Request.HttpContext.RequestServices 取得，
+// 而非透過建構子注入。
 
-// 各 middleware 以 scoped 注入（跟隨請求生命週期）
-builder.Services.AddScoped<CorsMiddleware>();
-builder.Services.AddScoped<ErrorHandlingMiddleware>();
-builder.Services.AddScoped<JwtAuthMiddleware>();
+builder.Services.AddSingleton<CorsMiddleware>();
+builder.Services.AddSingleton<ErrorHandlingMiddleware>();
+builder.Services.AddSingleton<JwtAuthMiddleware>();
 
-// MiddlewarePipeline 本身也是 scoped，每個請求組裝一次管線
-builder.Services.AddScoped<MiddlewarePipeline>(sp =>
+builder.Services.AddSingleton<MiddlewarePipeline>(sp =>
 {
     var pipeline = new MiddlewarePipeline();
     pipeline
