@@ -1,0 +1,260 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-header-icon">
+      <!-- Globe / server icon -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">網站清單</h1>
+      <p class="page-subtitle">管理網站維護與到期追蹤</p>
+    </div>
+  </div>
+  <button class="btn-primary" (click)="openCreateDialog()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    新增項目
+  </button>
+</div>
+
+<!-- Data Table Panel -->
+<div class="panel">
+
+  <!-- Search bar -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="搜尋維護項目..."
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <!-- Loading skeleton -->
+  @if (loading()) {
+    <div class="loading-rows">
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="skeleton-row">
+          <div class="skeleton-cell item"></div>
+          <div class="skeleton-cell url"></div>
+          <div class="skeleton-cell date"></div>
+          <div class="skeleton-cell date"></div>
+          <div class="skeleton-cell status"></div>
+          <div class="skeleton-cell actions"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading()) {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">維護項目</th>
+          <th style="width: 25%">網址</th>
+          <th class="col-hide-mobile" style="width: 15%">開始日期</th>
+          <th style="width: 15%">到期日期</th>
+          <th style="width: 10%">狀態</th>
+          <th style="width: 10%; text-align: right">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (paginatedHosts().length === 0) {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </div>
+                <p class="empty-text">尚無維護項目</p>
+                <p class="empty-sub">點擊「新增項目」建立第一筆維護記錄</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        @for (host of paginatedHosts(); track host.hostId) {
+          @let expiryStatus = getExpiryStatus(host.expireDate);
+          <tr>
+            <!-- 維護項目 -->
+            <td class="col-item" data-label="維護項目">{{ host.item }}</td>
+
+            <!-- 網址 -->
+            <td class="col-url" data-label="網址">
+              @if (host.url) {
+                <a
+                  class="url-link"
+                  [href]="host.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [title]="host.url"
+                >
+                  {{ shortenUrl(host.url) }}
+                  <svg class="url-external-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              } @else {
+                <span class="no-value">未設定</span>
+              }
+            </td>
+
+            <!-- 開始日期 -->
+            <td class="col-date col-hide-mobile" data-label="開始日期">
+              {{ formatDate(host.startDate) }}
+            </td>
+
+            <!-- 到期日期 -->
+            <td class="col-date" data-label="到期日期">
+              {{ formatDate(host.expireDate) }}
+            </td>
+
+            <!-- 狀態 -->
+            <td data-label="狀態">
+              <span class="expiry-badge" [class]="'expiry-' + expiryStatus">
+                {{ getExpiryLabel(expiryStatus) }}
+              </span>
+            </td>
+
+            <!-- 操作 -->
+            <td class="col-actions" data-label="操作">
+              <div class="action-group">
+                <button
+                  class="btn-icon"
+                  title="編輯"
+                  (click)="openEditDialog(host)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button
+                  class="btn-icon danger"
+                  title="刪除"
+                  (click)="openDeleteDialog(host)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (totalCount() > 0) {
+      <div class="pagination">
+        <div class="pagination-info">
+          共 {{ totalCount() }} 筆，第 {{ currentPage() }}/{{ totalPages() }} 頁
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+            title="上一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+
+          @for (p of pageNumbers(); track p) {
+            <button
+              class="page-btn"
+              [class.active]="p === currentPage()"
+              (click)="goToPage(p)"
+            >
+              {{ p }}
+            </button>
+          }
+
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+            title="下一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<!-- Host Form Dialog -->
+@if (formDialogOpen()) {
+  <app-host-form-dialog
+    [host]="selectedHost()"
+    [saving]="saving()"
+    (saved)="onFormSaved($event)"
+    (cancelled)="closeFormDialog()"
+  />
+}
+
+<!-- Delete Confirm Dialog -->
+@if (deleteDialog().open) {
+  <div class="modal-overlay" (click)="closeDeleteDialog()">
+    <div class="confirm-dialog" (click)="$event.stopPropagation()">
+
+      <!-- Neon line (red for danger) -->
+      <div class="confirm-neon-line"></div>
+
+      <div class="confirm-body">
+        <!-- Icon -->
+        <div class="confirm-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </div>
+
+        <h3 class="confirm-title">刪除維護項目</h3>
+        <p class="confirm-message">
+          確定要刪除「<strong>{{ deleteDialog().itemName }}</strong>」嗎？<br>
+          此操作無法復原。
+        </p>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-ghost" (click)="closeDeleteDialog()" [disabled]="loading()">
+          取消
+        </button>
+        <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            刪除中...
+          } @else {
+            確認刪除
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

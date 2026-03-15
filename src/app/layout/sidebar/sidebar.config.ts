@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
     permissionKey: 'ItemList',
     children: [
       { label: '報價清單', route: '/quotation', permissionKey: 'ItemList' },
+      { label: '網站清單', route: '/hosts', permissionKey: 'HostList' },
     ],
   },
   {

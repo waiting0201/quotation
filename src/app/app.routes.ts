@@ -59,6 +59,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'hosts',
+        data: { breadcrumb: '網站清單' },
+        loadChildren: () =>
+          import('./features/host/host.routes').then(
+            (m) => m.HOST_ROUTES
+          ),
+      },
+      {
         path: 'settings',
         data: { breadcrumb: '系統設定' },
         loadChildren: () =>
