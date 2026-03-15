@@ -14,7 +14,7 @@ export interface NavChild {
 
 export const NAV_ITEMS: NavItem[] = [
   {
-    label: '主頁',
+    label: 'Dashboard',
     icon: 'home',
     route: '/dashboard',
   },
@@ -28,37 +28,32 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    label: '請款管理',
+    icon: 'receipt',
+    permissionKey: 'InvoiceList',
+    children: [
+      { label: '請款清單', route: '/invoice', permissionKey: 'InvoiceList' },
+      { label: '入帳清單', route: '/income', permissionKey: 'IncomeList' },
+    ],
+  },
+  {
     label: '客戶管理',
     icon: 'users',
     permissionKey: 'CustomerList',
     children: [
       { label: '客戶清單', route: '/customer', permissionKey: 'CustomerList' },
-      { label: '客戶分類', route: '/customer/category', permissionKey: 'CustomerTypeList' },
+      { label: '客戶分類清單', route: '/customer/category', permissionKey: 'CustomerTypeList' },
     ],
   },
   {
-    label: '發票管理',
-    icon: 'receipt',
-    permissionKey: 'InvoiceList',
-    children: [
-      { label: '發票清單', route: '/invoice', permissionKey: 'InvoiceList' },
-    ],
-  },
-  {
-    label: '收款管理',
-    icon: 'dollar',
-    permissionKey: 'IncomeList',
-    children: [
-      { label: '收款清單', route: '/income', permissionKey: 'IncomeList' },
-    ],
-  },
-  {
-    label: '系統設定',
+    label: '系統管理',
     icon: 'settings',
     permissionKey: 'UserList',
     children: [
-      { label: '使用者管理', route: '/settings/users', permissionKey: 'UserList' },
-      { label: '群組管理', route: '/settings/groups', permissionKey: 'GroupList' },
+      { label: '使用者清單', route: '/settings/users', permissionKey: 'UserList' },
+      { label: '群組清單', route: '/settings/groups', permissionKey: 'GroupList' },
+      { label: '國家清單', route: '/settings/countries', permissionKey: 'CountryList' },
+      { label: '付款條件清單', route: '/settings/payments', permissionKey: 'PaymentsList' },
     ],
   },
 ];

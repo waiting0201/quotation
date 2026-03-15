@@ -40,6 +40,10 @@ export class InvoiceApiService {
     return this.http.delete<ApiResponse<unknown>>(`/api/invoices/${id}`);
   }
 
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.get(`/api/invoices/${id}/pdf`, { responseType: 'blob' });
+  }
+
   getCustomerQuotations(customerId: number): Observable<ApiResponse<QuotationLookup[]>> {
     return this.http.get<ApiResponse<QuotationLookup[]>>(`/api/invoices/quotations/${customerId}`);
   }

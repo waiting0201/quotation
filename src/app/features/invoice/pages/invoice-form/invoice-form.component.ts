@@ -56,7 +56,7 @@ export class InvoiceFormComponent implements OnInit {
   readonly quotationsLoading = signal(false);
 
   readonly isEditMode = computed(() => this.invoiceId() !== null);
-  readonly pageTitle = computed(() => this.isEditMode() ? '編輯發票' : '新增發票');
+  readonly pageTitle = computed(() => this.isEditMode() ? '編輯請款' : '新增請款');
 
   // ─── Customer searchable dropdown ───────────────────────────────────────
   private readonly elRef = inject(ElementRef);
@@ -241,7 +241,7 @@ export class InvoiceFormComponent implements OnInit {
           }
         },
         error: () => {
-          this.notify.error('載入發票資料失敗');
+          this.notify.error('載入請款資料失敗');
           this.loading.set(false);
           this.router.navigate(['/invoice']);
         },
@@ -319,12 +319,12 @@ export class InvoiceFormComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notify.success(id ? '發票更新成功' : '發票新增成功');
+          this.notify.success(id ? '請款更新成功' : '請款新增成功');
           this.saving.set(false);
           this.router.navigate(['/invoice']);
         },
         error: () => {
-          this.notify.error(id ? '更新發票失敗' : '新增發票失敗');
+          this.notify.error(id ? '更新請款失敗' : '新增請款失敗');
           this.saving.set(false);
         },
       });

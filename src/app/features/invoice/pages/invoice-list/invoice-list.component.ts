@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { InvoiceFacade } from '../../facades/invoice.facade';
+import { InvoiceApiService } from '../../services/invoice-api.service';
 import { InvoiceListItem } from '../../models/invoice.model';
 
 /** 稅別顯示名稱 */
@@ -49,6 +50,7 @@ const PAGE_SIZE = 20;
 })
 export class InvoiceListComponent implements OnInit {
   private readonly facade = inject(InvoiceFacade);
+  private readonly invoiceApi = inject(InvoiceApiService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -148,6 +150,22 @@ export class InvoiceListComponent implements OnInit {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
     this.facade.loadInvoices(page, this.pageSize, this.searchQuery());
+  }
+
+  // ─── Print PDF ──────────────────────────────────────────────────────────
+  downloadPdf(invoice: InvoiceListItem): void {
+    this.invoiceApi.downloadPdf(invoice.invoiceId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${invoice.invoiceCode}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+      });
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
