@@ -1,47 +1,45 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { GroupFacade } from '../../facades/group.facade';
-import { GroupListItem, GroupCreateUpdate } from '../../models/group.model';
-import { GroupFormDialogComponent } from '../../components/group-form-dialog/group-form-dialog.component';
+import { CustomerTypeFacade } from '../../facades/customer-type.facade';
+import { CustomerTypeListItem, CustomerTypeCreateUpdate } from '../../models/customer-type.model';
+import { CustomerTypeFormDialogComponent } from '../../components/customer-type-form-dialog/customer-type-form-dialog.component';
 
 /** 刪除對話框的狀態 */
 interface DeleteDialogState {
   open: boolean;
-  groupId: string;
-  groupTitle: string;
-  hasUsers: boolean;
-  userCount: number;
+  typeId: number;
+  typeTitle: string;
+  hasCustomers: boolean;
+  customerCount: number;
 }
 
 /** 分頁設定 */
 const PAGE_SIZE = 20;
 
 @Component({
-  selector: 'app-groups-page',
+  selector: 'app-customer-type-list',
   standalone: true,
-  imports: [GroupFormDialogComponent],
-  templateUrl: './groups-page.component.html',
-  styleUrl: './groups-page.component.scss',
+  imports: [CustomerTypeFormDialogComponent],
+  templateUrl: './customer-type-list.component.html',
+  styleUrl: './customer-type-list.component.scss',
 })
-export class GroupsPageComponent implements OnInit {
-  private readonly facade = inject(GroupFacade);
+export class CustomerTypeListComponent implements OnInit {
+  private readonly facade = inject(CustomerTypeFacade);
 
   // ─── Facade signals ───────────────────────────────────────────────────────
-  readonly groups = this.facade.groups;
+  readonly types = this.facade.types;
   readonly loading = this.facade.loading;
   readonly saving = this.facade.saving;
-  readonly selectedGroup = this.facade.selectedGroup;
-  readonly permissionTree = this.facade.permissionTree;
 
   // ─── Dialog state ─────────────────────────────────────────────────────────
   readonly formDialogOpen = signal(false);
-  readonly editingGroupId = signal<string | null>(null);
+  readonly editingType = signal<CustomerTypeListItem | null>(null);
 
   readonly deleteDialog = signal<DeleteDialogState>({
     open: false,
-    groupId: '',
-    groupTitle: '',
-    hasUsers: false,
-    userCount: 0,
+    typeId: 0,
+    typeTitle: '',
+    hasCustomers: false,
+    customerCount: 0,
   });
 
   // ─── Pagination ───────────────────────────────────────────────────────────
@@ -65,37 +63,30 @@ export class GroupsPageComponent implements OnInit {
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.facade.loadGroups(1, this.pageSize);
-    this.facade.loadPermissionTree();
+    this.facade.loadTypes(1, this.pageSize);
   }
 
   // ─── Create / Edit ────────────────────────────────────────────────────────
   openCreateDialog(): void {
-    this.editingGroupId.set(null);
-    this.facade.clearSelectedGroup();
+    this.editingType.set(null);
     this.formDialogOpen.set(true);
   }
 
-  openEditDialog(group: GroupListItem): void {
-    this.editingGroupId.set(group.groupId);
-    this.facade.loadGroupDetail(group.groupId).subscribe((detail) => {
-      if (detail) {
-        this.formDialogOpen.set(true);
-      }
-    });
+  openEditDialog(type: CustomerTypeListItem): void {
+    this.editingType.set(type);
+    this.formDialogOpen.set(true);
   }
 
   closeFormDialog(): void {
     this.formDialogOpen.set(false);
-    this.editingGroupId.set(null);
-    this.facade.clearSelectedGroup();
+    this.editingType.set(null);
   }
 
-  onFormSaved(dto: GroupCreateUpdate): void {
-    const id = this.editingGroupId();
-    const obs = id
-      ? this.facade.updateGroup(id, dto, this.currentPage(), this.pageSize)
-      : this.facade.createGroup(dto, this.currentPage(), this.pageSize);
+  onFormSaved(dto: CustomerTypeCreateUpdate): void {
+    const editing = this.editingType();
+    const obs = editing
+      ? this.facade.updateType(editing.customerTypeId, dto, this.currentPage(), this.pageSize)
+      : this.facade.createType(dto, this.currentPage(), this.pageSize);
 
     obs.subscribe((ok) => {
       if (ok) {
@@ -105,13 +96,13 @@ export class GroupsPageComponent implements OnInit {
   }
 
   // ─── Delete ───────────────────────────────────────────────────────────────
-  openDeleteDialog(group: GroupListItem): void {
+  openDeleteDialog(type: CustomerTypeListItem): void {
     this.deleteDialog.set({
       open: true,
-      groupId: group.groupId,
-      groupTitle: group.title,
-      hasUsers: group.userCount > 0,
-      userCount: group.userCount,
+      typeId: type.customerTypeId,
+      typeTitle: type.title,
+      hasCustomers: type.customerCount > 0,
+      customerCount: type.customerCount,
     });
   }
 
@@ -120,8 +111,8 @@ export class GroupsPageComponent implements OnInit {
   }
 
   confirmDelete(): void {
-    const { groupId } = this.deleteDialog();
-    this.facade.deleteGroup(groupId, this.currentPage(), this.pageSize).subscribe((ok) => {
+    const { typeId } = this.deleteDialog();
+    this.facade.deleteType(typeId, this.currentPage(), this.pageSize).subscribe((ok) => {
       if (ok) {
         this.closeDeleteDialog();
       }
@@ -132,6 +123,6 @@ export class GroupsPageComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
-    this.facade.loadGroups(page, this.pageSize);
+    this.facade.loadTypes(page, this.pageSize);
   }
 }

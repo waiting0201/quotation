@@ -80,6 +80,7 @@
                   <a
                     [routerLink]="child.route"
                     routerLinkActive="sidebar-child-active"
+                    [routerLinkActiveOptions]="{ exact: true }"
                     class="sidebar-child-item"
                   >
                     <span class="sidebar-child-dot" aria-hidden="true"></span>

@@ -49,7 +49,7 @@
         </tr>
       </thead>
       <tbody>
-        @if (paginatedGroups().length === 0) {
+        @if (groups().length === 0) {
           <tr>
             <td colspan="3">
               <div class="empty-state">
@@ -68,7 +68,7 @@
           </tr>
         }
 
-        @for (group of paginatedGroups(); track group.groupId) {
+        @for (group of groups(); track group.groupId) {
           <tr>
             <td class="col-name" data-label="群組名稱">{{ group.title }}</td>
             <td data-label="使用者數量">
@@ -114,6 +114,16 @@
         <div class="pagination-buttons">
           <button
             class="page-btn"
+            [disabled]="currentPage() <= 5"
+            (click)="goToPage(currentPage() - 5)"
+            title="前 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 18 5 12 11 6"/><polyline points="19 18 13 12 19 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
             [disabled]="currentPage() === 1"
             (click)="goToPage(currentPage() - 1)"
             title="上一頁"
@@ -141,6 +151,16 @@
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() + 5 > totalPages()"
+            (click)="goToPage(currentPage() + 5)"
+            title="後 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="5 18 11 12 5 6"/><polyline points="13 18 19 12 13 6"/>
             </svg>
           </button>
         </div>

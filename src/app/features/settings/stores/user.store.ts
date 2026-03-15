@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { UserListItem, UserDetail } from '../models/user.model';
 import { PermissionNode } from '../models/group.model';
 
@@ -10,6 +10,8 @@ export class UserStore {
   private readonly _saving = signal(false);
   private readonly _selectedUser = signal<UserDetail | null>(null);
   private readonly _permissionTree = signal<PermissionNode[]>([]);
+  private readonly _totalCount = signal(0);
+  private readonly _totalPages = signal(1);
 
   // ─── Public readonly signals ─────────────────────────────────────────────
   readonly users = this._users.asReadonly();
@@ -17,9 +19,8 @@ export class UserStore {
   readonly saving = this._saving.asReadonly();
   readonly selectedUser = this._selectedUser.asReadonly();
   readonly permissionTree = this._permissionTree.asReadonly();
-
-  // ─── Derived signals ─────────────────────────────────────────────────────
-  readonly totalCount = computed(() => this._users().length);
+  readonly totalCount = this._totalCount.asReadonly();
+  readonly totalPages = this._totalPages.asReadonly();
 
   // ─── Mutations ───────────────────────────────────────────────────────────
   setUsers(users: UserListItem[]): void {
@@ -42,7 +43,11 @@ export class UserStore {
     this._permissionTree.set(tree);
   }
 
-  removeUser(userId: string): void {
-    this._users.update((list) => list.filter((u) => u.userId !== userId));
+  setTotalCount(count: number): void {
+    this._totalCount.set(count);
+  }
+
+  setTotalPages(pages: number): void {
+    this._totalPages.set(pages);
   }
 }

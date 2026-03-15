@@ -25,15 +25,20 @@ export class UserFacade {
   readonly selectedUser = this.store.selectedUser;
   readonly permissionTree = this.store.permissionTree;
   readonly totalCount = this.store.totalCount;
+  readonly totalPages = this.store.totalPages;
 
   // ─── Load users list ─────────────────────────────────────────────────────
-  loadUsers(): void {
+  loadUsers(page = 1, pageSize = 20, search?: string): void {
     this.store.setLoading(true);
     this.api
-      .getList()
+      .getList(page, pageSize, search)
       .pipe(finalize(() => this.store.setLoading(false)))
       .subscribe({
-        next: (res) => this.store.setUsers(res.data),
+        next: (res) => {
+          this.store.setUsers(res.data);
+          this.store.setTotalCount(res.pagination.totalCount);
+          this.store.setTotalPages(res.pagination.totalPages);
+        },
         error: () => this.notification.error('載入使用者列表失敗'),
       });
   }
@@ -64,12 +69,12 @@ export class UserFacade {
   }
 
   // ─── Create user ─────────────────────────────────────────────────────────
-  createUser(dto: UserCreate): Observable<boolean> {
+  createUser(dto: UserCreate, page: number, pageSize: number, search?: string): Observable<boolean> {
     this.store.setSaving(true);
     return this.api.create(dto).pipe(
       map(() => {
         this.notification.success('使用者新增成功');
-        this.loadUsers(); // 重新載入列表
+        this.loadUsers(page, pageSize, search); // 重新載入列表
         return true;
       }),
       catchError((err) => {
@@ -82,12 +87,12 @@ export class UserFacade {
   }
 
   // ─── Update user ─────────────────────────────────────────────────────────
-  updateUser(id: string, dto: UserUpdate): Observable<boolean> {
+  updateUser(id: string, dto: UserUpdate, page: number, pageSize: number, search?: string): Observable<boolean> {
     this.store.setSaving(true);
     return this.api.update(id, dto).pipe(
       map(() => {
         this.notification.success('使用者更新成功');
-        this.loadUsers(); // 重新載入列表
+        this.loadUsers(page, pageSize, search); // 重新載入列表
         return true;
       }),
       catchError((err) => {
@@ -117,12 +122,13 @@ export class UserFacade {
   }
 
   // ─── Delete user ─────────────────────────────────────────────────────────
-  deleteUser(id: string): Observable<boolean> {
+  deleteUser(id: string, page: number, pageSize: number, search?: string): Observable<boolean> {
     this.store.setSaving(true);
     return this.api.delete(id).pipe(
       map(() => {
-        this.store.removeUser(id);
         this.notification.success('使用者刪除成功');
+        // 刪除成功後重新從 API 載入當前頁
+        this.loadUsers(page, pageSize, search);
         return true;
       }),
       catchError((err) => {

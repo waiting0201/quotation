@@ -2,23 +2,23 @@
 <div class="page-header">
   <div class="page-header-left">
     <div class="page-header-icon">
-      <!-- Globe / server icon -->
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
     </div>
     <div>
-      <h1 class="page-title">網站清單</h1>
-      <p class="page-subtitle">管理網站維護與到期追蹤</p>
+      <h1 class="page-title">客戶清單</h1>
+      <p class="page-subtitle">管理客戶資料與聯絡資訊</p>
     </div>
   </div>
-  <button class="btn-primary" (click)="openCreateDialog()">
+  <button class="btn-primary" (click)="goToCreate()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
     </svg>
-    新增項目
+    新增客戶
   </button>
 </div>
 
@@ -35,7 +35,7 @@
       <input
         type="text"
         class="search-input"
-        placeholder="搜尋維護項目..."
+        placeholder="搜尋客戶名稱或編號..."
         (input)="onSearchInput($any($event.target).value)"
       />
     </div>
@@ -46,11 +46,11 @@
     <div class="loading-rows">
       @for (_ of [1,2,3,4]; track $index) {
         <div class="skeleton-row">
-          <div class="skeleton-cell item"></div>
-          <div class="skeleton-cell url"></div>
+          <div class="skeleton-cell type"></div>
+          <div class="skeleton-cell code"></div>
+          <div class="skeleton-cell name"></div>
+          <div class="skeleton-cell phone"></div>
           <div class="skeleton-cell date"></div>
-          <div class="skeleton-cell date"></div>
-          <div class="skeleton-cell status"></div>
           <div class="skeleton-cell actions"></div>
         </div>
       }
@@ -62,76 +62,59 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th style="width: 25%">維護項目</th>
-          <th style="width: 25%">網址</th>
-          <th class="col-hide-mobile" style="width: 15%">開始日期</th>
-          <th style="width: 15%">到期日期</th>
-          <th style="width: 10%">狀態</th>
-          <th style="width: 10%; text-align: right">操作</th>
+          <th style="width: 12%">分類</th>
+          <th style="width: 20%">客戶編號</th>
+          <th style="width: 28%">客戶名稱</th>
+          <th class="col-hide-mobile" style="width: 15%">電話</th>
+          <th class="col-hide-mobile" style="width: 13%">建立日期</th>
+          <th style="width: 12%; text-align: right">操作</th>
         </tr>
       </thead>
       <tbody>
-        @if (hosts().length === 0) {
+        @if (customers().length === 0) {
           <tr>
             <td colspan="6">
               <div class="empty-state">
                 <div class="empty-icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
                 </div>
-                <p class="empty-text">尚無維護項目</p>
-                <p class="empty-sub">點擊「新增項目」建立第一筆維護記錄</p>
+                <p class="empty-text">尚無客戶資料</p>
+                <p class="empty-sub">點擊「新增客戶」建立第一位客戶</p>
               </div>
             </td>
           </tr>
         }
 
-        @for (host of hosts(); track host.hostId) {
-          @let expiryStatus = getExpiryStatus(host.expireDate);
+        @for (customer of customers(); track customer.customerId) {
           <tr>
-            <!-- 維護項目 -->
-            <td class="col-item" data-label="維護項目">{{ host.item }}</td>
-
-            <!-- 網址 -->
-            <td class="col-url" data-label="網址">
-              @if (host.url) {
-                <a
-                  class="url-link"
-                  [href]="host.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  [title]="host.url"
-                >
-                  {{ shortenUrl(host.url) }}
-                  <svg class="url-external-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/>
-                    <line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                </a>
+            <!-- 分類 -->
+            <td data-label="分類">
+              @if (customer.customerTypeName) {
+                <span class="type-badge">{{ customer.customerTypeName }}</span>
               } @else {
-                <span class="no-value">未設定</span>
+                <span class="no-value">未分類</span>
               }
             </td>
 
-            <!-- 開始日期 -->
-            <td class="col-date col-hide-mobile" data-label="開始日期">
-              {{ formatDate(host.startDate) }}
+            <!-- 客戶編號 -->
+            <td class="col-code" data-label="客戶編號">{{ customer.code }}</td>
+
+            <!-- 客戶名稱 -->
+            <td class="col-name" data-label="客戶名稱">{{ customer.name }}</td>
+
+            <!-- 電話 -->
+            <td class="col-hide-mobile col-phone" data-label="電話">
+              {{ customer.phone || '—' }}
             </td>
 
-            <!-- 到期日期 -->
-            <td class="col-date" data-label="到期日期">
-              {{ formatDate(host.expireDate) }}
-            </td>
-
-            <!-- 狀態 -->
-            <td data-label="狀態">
-              <span class="expiry-badge" [class]="'expiry-' + expiryStatus">
-                {{ getExpiryLabel(expiryStatus) }}
-              </span>
+            <!-- 建立日期 -->
+            <td class="col-hide-mobile col-date" data-label="建立日期">
+              {{ formatDate(customer.createDate) }}
             </td>
 
             <!-- 操作 -->
@@ -139,8 +122,8 @@
               <div class="action-group">
                 <button
                   class="btn-icon"
-                  title="編輯"
-                  (click)="openEditDialog(host)"
+                  title="編輯客戶"
+                  (click)="goToEdit(customer)"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -149,8 +132,8 @@
                 </button>
                 <button
                   class="btn-icon danger"
-                  title="刪除"
-                  (click)="openDeleteDialog(host)"
+                  title="刪除客戶"
+                  (click)="openDeleteDialog(customer)"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
@@ -228,16 +211,6 @@
   }
 </div>
 
-<!-- Host Form Dialog -->
-@if (formDialogOpen()) {
-  <app-host-form-dialog
-    [host]="selectedHost()"
-    [saving]="saving()"
-    (saved)="onFormSaved($event)"
-    (cancelled)="closeFormDialog()"
-  />
-}
-
 <!-- Delete Confirm Dialog -->
 @if (deleteDialog().open) {
   <div class="modal-overlay" (click)="closeDeleteDialog()">
@@ -255,25 +228,40 @@
           </svg>
         </div>
 
-        <h3 class="confirm-title">刪除維護項目</h3>
+        <h3 class="confirm-title">刪除客戶</h3>
         <p class="confirm-message">
-          確定要刪除「<strong>{{ deleteDialog().itemName }}</strong>」嗎？<br>
+          確定要刪除「<strong>{{ deleteDialog().customerName }}</strong>」嗎？<br>
           此操作無法復原。
         </p>
+
+        <!-- Warning: customer has quotations -->
+        @if (deleteDialog().hasQuotations) {
+          <div class="warning-box">
+            <svg class="warning-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <p class="warning-text">
+              此客戶有關聯的報價單，<strong>無法刪除</strong>。請先移除相關報價單後再執行。
+            </p>
+          </div>
+        }
       </div>
 
       <div class="confirm-actions">
         <button class="btn-ghost" (click)="closeDeleteDialog()" [disabled]="loading()">
           取消
         </button>
-        <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
-          @if (loading()) {
-            <span class="spinner"></span>
-            刪除中...
-          } @else {
-            確認刪除
-          }
-        </button>
+        @if (!deleteDialog().hasQuotations) {
+          <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+            @if (loading()) {
+              <span class="spinner"></span>
+              刪除中...
+            } @else {
+              確認刪除
+            }
+          </button>
+        }
       </div>
     </div>
   </div>

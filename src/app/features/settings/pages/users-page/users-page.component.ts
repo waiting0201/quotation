@@ -1,5 +1,7 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { UserFacade } from '../../facades/user.facade';
 import { GroupFacade } from '../../facades/group.facade';
 import { UserListItem, UserCreate, UserUpdate, UserPasswordChange } from '../../models/user.model';
@@ -33,6 +35,7 @@ export class UsersPageComponent implements OnInit {
   private readonly facade = inject(UserFacade);
   private readonly groupFacade = inject(GroupFacade);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   // ─── Facade signals ───────────────────────────────────────────────────────
   readonly users = this.facade.users;
@@ -41,6 +44,10 @@ export class UsersPageComponent implements OnInit {
   readonly selectedUser = this.facade.selectedUser;
   readonly permissionTree = this.facade.permissionTree;
   readonly groups = this.groupFacade.groups;
+
+  // ─── Search ───────────────────────────────────────────────────────────────
+  readonly searchQuery = signal('');
+  private readonly _searchInput$ = new Subject<string>();
 
   // ─── Dialog state ─────────────────────────────────────────────────────────
   readonly formDialogOpen = signal(false);
@@ -68,24 +75,43 @@ export class UsersPageComponent implements OnInit {
   readonly currentPage = signal(1);
   readonly pageSize = PAGE_SIZE;
 
-  readonly totalCount = computed(() => this.users().length);
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.totalCount() / this.pageSize))
-  );
-  readonly paginatedUsers = computed(() => {
-    const page = this.currentPage();
-    const start = (page - 1) * this.pageSize;
-    return this.users().slice(start, start + this.pageSize);
+  readonly totalCount = this.facade.totalCount;
+  readonly totalPages = this.facade.totalPages;
+  readonly pageNumbers = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const maxVisible = 5;
+    let start = Math.max(1, current - Math.floor(maxVisible / 2));
+    let end = start + maxVisible - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   });
-  readonly pageNumbers = computed(() =>
-    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
-  );
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.facade.loadUsers();
+    this._searchInput$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((query) => {
+        this.searchQuery.set(query);
+        this.currentPage.set(1);
+        this.facade.loadUsers(1, this.pageSize, query);
+      });
+
+    this.facade.loadUsers(1, this.pageSize);
     this.facade.loadPermissionTree();
-    this.groupFacade.loadGroups();
+    this.groupFacade.loadGroups(1, this.pageSize);
+  }
+
+  // ─── Search handler ───────────────────────────────────────────────────────
+  onSearchInput(value: string): void {
+    this._searchInput$.next(value);
   }
 
   // ─── Create / Edit ────────────────────────────────────────────────────────
@@ -113,15 +139,12 @@ export class UsersPageComponent implements OnInit {
   onFormSaved(dto: UserCreate | UserUpdate): void {
     const id = this.editingUserId();
     const obs = id
-      ? this.facade.updateUser(id, dto as UserUpdate)
-      : this.facade.createUser(dto as UserCreate);
+      ? this.facade.updateUser(id, dto as UserUpdate, this.currentPage(), this.pageSize, this.searchQuery())
+      : this.facade.createUser(dto as UserCreate, this.currentPage(), this.pageSize, this.searchQuery());
 
     obs.subscribe((ok) => {
       if (ok) {
         this.closeFormDialog();
-        if (this.currentPage() > this.totalPages()) {
-          this.currentPage.set(1);
-        }
       }
     });
   }
@@ -141,12 +164,9 @@ export class UsersPageComponent implements OnInit {
 
   confirmDelete(): void {
     const { userId } = this.deleteDialog();
-    this.facade.deleteUser(userId).subscribe((ok) => {
+    this.facade.deleteUser(userId, this.currentPage(), this.pageSize, this.searchQuery()).subscribe((ok) => {
       if (ok) {
         this.closeDeleteDialog();
-        if (this.currentPage() > this.totalPages()) {
-          this.currentPage.set(1);
-        }
       }
     });
   }
@@ -193,6 +213,7 @@ export class UsersPageComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
+    this.facade.loadUsers(page, this.pageSize, this.searchQuery());
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

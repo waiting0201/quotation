@@ -63,18 +63,20 @@ export class HostListComponent implements OnInit {
   readonly currentPage = signal(1);
   readonly pageSize = PAGE_SIZE;
 
-  readonly totalCount = computed(() => this.hosts().length);
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.totalCount() / this.pageSize))
-  );
-  readonly paginatedHosts = computed(() => {
-    const page = this.currentPage();
-    const start = (page - 1) * this.pageSize;
-    return this.hosts().slice(start, start + this.pageSize);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(1);
+  readonly pageNumbers = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const maxVisible = 5;
+    let start = Math.max(1, current - Math.floor(maxVisible / 2));
+    let end = start + maxVisible - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   });
-  readonly pageNumbers = computed(() =>
-    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
-  );
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void {
@@ -98,16 +100,13 @@ export class HostListComponent implements OnInit {
   // ─── Load ─────────────────────────────────────────────────────────────────
   private _loadHosts(search?: string): void {
     this.loading.set(true);
-    this.api.getList(search)
+    this.api.getList(this.currentPage(), this.pageSize, search)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.hosts.set(res.data);
-          // 分頁邊界檢查必須在 hosts 更新後執行，
-          // 因為 totalPages() 依賴 hosts() signal
-          if (this.currentPage() > this.totalPages()) {
-            this.currentPage.set(this.totalPages());
-          }
+          this.totalCount.set(res.pagination.totalCount);
+          this.totalPages.set(res.pagination.totalPages);
           this.loading.set(false);
         },
         error: () => {
@@ -201,6 +200,7 @@ export class HostListComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
+    this._loadHosts(this.searchQuery());
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

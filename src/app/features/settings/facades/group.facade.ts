@@ -18,15 +18,20 @@ export class GroupFacade {
   readonly selectedGroup = this.store.selectedGroup;
   readonly permissionTree = this.store.permissionTree;
   readonly totalCount = this.store.totalCount;
+  readonly totalPages = this.store.totalPages;
 
   // ─── Load groups list ────────────────────────────────────────────────────
-  loadGroups(): void {
+  loadGroups(page = 1, pageSize = 20): void {
     this.store.setLoading(true);
     this.api
-      .getList()
+      .getList(page, pageSize)
       .pipe(finalize(() => this.store.setLoading(false)))
       .subscribe({
-        next: (res) => this.store.setGroups(res.data),
+        next: (res) => {
+          this.store.setGroups(res.data);
+          this.store.setTotalCount(res.pagination.totalCount);
+          this.store.setTotalPages(res.pagination.totalPages);
+        },
         error: () => this.notification.error('載入群組列表失敗'),
       });
   }
@@ -57,12 +62,12 @@ export class GroupFacade {
   }
 
   // ─── Create group ────────────────────────────────────────────────────────
-  createGroup(dto: GroupCreateUpdate): Observable<boolean> {
+  createGroup(dto: GroupCreateUpdate, page: number, pageSize: number): Observable<boolean> {
     this.store.setSaving(true);
     return this.api.create(dto).pipe(
       map(() => {
         this.notification.success('群組新增成功');
-        this.loadGroups(); // 重新載入列表以取得正確的 userCount
+        this.loadGroups(page, pageSize); // 重新載入列表以取得正確的 userCount
         return true;
       }),
       catchError(() => {
@@ -74,12 +79,12 @@ export class GroupFacade {
   }
 
   // ─── Update group ────────────────────────────────────────────────────────
-  updateGroup(id: string, dto: GroupCreateUpdate): Observable<boolean> {
+  updateGroup(id: string, dto: GroupCreateUpdate, page: number, pageSize: number): Observable<boolean> {
     this.store.setSaving(true);
     return this.api.update(id, dto).pipe(
       map(() => {
         this.notification.success('群組更新成功');
-        this.loadGroups(); // 重新載入列表
+        this.loadGroups(page, pageSize); // 重新載入列表
         return true;
       }),
       catchError(() => {
@@ -91,21 +96,22 @@ export class GroupFacade {
   }
 
   // ─── Delete group ────────────────────────────────────────────────────────
-  deleteGroup(id: string): Observable<boolean> {
+  deleteGroup(id: string, page: number, pageSize: number): Observable<boolean> {
     this.store.setLoading(true);
     return this.api.delete(id).pipe(
       map(() => {
-        this.store.removeGroup(id);
         this.notification.success('群組刪除成功');
+        // 刪除成功後重新從 API 載入當前頁
+        this.loadGroups(page, pageSize);
         return true;
       }),
       catchError((err) => {
         const msg =
           err?.error?.error?.message ?? '刪除群組失敗，請確認群組內無使用者';
         this.notification.error(msg);
+        this.store.setLoading(false);
         return of(false);
-      }),
-      finalize(() => this.store.setLoading(false))
+      })
     );
   }
 

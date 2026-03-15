@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../../../core/models/api-response.model';
+import { ApiResponse, ApiListResponse } from '../../../core/models/api-response.model';
 import {
   UserListItem,
   UserDetail,
@@ -14,8 +14,14 @@ import {
 export class UserApiService {
   private readonly http = inject(HttpClient);
 
-  getList(): Observable<ApiResponse<UserListItem[]>> {
-    return this.http.get<ApiResponse<UserListItem[]>>('/api/users');
+  getList(page = 1, pageSize = 20, search?: string): Observable<ApiListResponse<UserListItem>> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('pageSize', pageSize);
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+    return this.http.get<ApiListResponse<UserListItem>>('/api/users', { params });
   }
 
   getById(id: string): Observable<ApiResponse<UserDetail>> {

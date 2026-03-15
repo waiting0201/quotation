@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../../../core/models/api-response.model';
+import { ApiResponse, ApiListResponse } from '../../../core/models/api-response.model';
 import {
   GroupListItem,
   GroupDetail,
@@ -13,8 +13,11 @@ import {
 export class GroupApiService {
   private readonly http = inject(HttpClient);
 
-  getList(): Observable<ApiResponse<GroupListItem[]>> {
-    return this.http.get<ApiResponse<GroupListItem[]>>('/api/groups');
+  getList(page = 1, pageSize = 20): Observable<ApiListResponse<GroupListItem>> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('pageSize', pageSize);
+    return this.http.get<ApiListResponse<GroupListItem>>('/api/groups', { params });
   }
 
   getById(id: string): Observable<ApiResponse<GroupDetail>> {
