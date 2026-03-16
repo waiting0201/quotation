@@ -9,4 +9,20 @@ export const QUOTATION_ROUTES: Routes = [
         (m) => m.QuotationListComponent
       ),
   },
+  {
+    path: 'create',
+    data: { breadcrumb: '新增報價' },
+    loadComponent: () =>
+      import('./pages/quotation-form/quotation-form.component').then(
+        (m) => m.QuotationFormComponent
+      ),
+  },
+  {
+    path: ':id',
+    data: { breadcrumb: '編輯報價' },
+    loadComponent: () =>
+      import('./pages/quotation-form/quotation-form.component').then(
+        (m) => m.QuotationFormComponent
+      ),
+  },
 ];
