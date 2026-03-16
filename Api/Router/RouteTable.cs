@@ -87,6 +87,20 @@ public class RouteTable
         Register<CustomerTypeController>("PUT",    "customer-types/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
         Register<CustomerTypeController>("DELETE", "customer-types/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
 
+        // ── Countries ────────────────────────────────────────────────────────
+        Register<CountryController>("GET",    "countries",      (c, ctx) => c.GetList(ctx));
+        Register<CountryController>("POST",   "countries",      (c, ctx) => c.Create(ctx));
+        Register<CountryController>("GET",    "countries/{id}", (c, ctx) => c.GetById(ctx, ParseInt(ctx, "id")));
+        Register<CountryController>("PUT",    "countries/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
+        Register<CountryController>("DELETE", "countries/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
+
+        // ── Payments ─────────────────────────────────────────────────────────
+        Register<PaymentController>("GET",    "payments",      (c, ctx) => c.GetList(ctx));
+        Register<PaymentController>("POST",   "payments",      (c, ctx) => c.Create(ctx));
+        Register<PaymentController>("GET",    "payments/{id}", (c, ctx) => c.GetById(ctx, ParseInt(ctx, "id")));
+        Register<PaymentController>("PUT",    "payments/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
+        Register<PaymentController>("DELETE", "payments/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
+
         // ── Customers ─────────────────────────────────────────────────────────
         Register<CustomerController>("GET",    "customers",      (c, ctx) => c.GetList(ctx));
         Register<CustomerController>("POST",   "customers",      (c, ctx) => c.Create(ctx));
