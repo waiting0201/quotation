@@ -108,6 +108,17 @@ public class RouteTable
         Register<CustomerController>("PUT",    "customers/{id}", (c, ctx) => c.Update(ctx, ParseInt(ctx, "id")));
         Register<CustomerController>("DELETE", "customers/{id}", (c, ctx) => c.Delete(ctx, ParseInt(ctx, "id")));
 
+        // ── Quotations ────────────────────────────────────────────────────────
+        // ⚠ 具體路由必須排在萬用路由之前：
+        //   - quotations/{id}/pdf  → 具體第三段，排在 quotations/{id} 之前
+        //   - quotations/{id}      → 最後才比對
+        Register<QuotationController>("GET",    "quotations",          (c, ctx) => c.GetList(ctx));
+        Register<QuotationController>("POST",   "quotations",          (c, ctx) => c.Create(ctx));
+        Register<QuotationController>("GET",    "quotations/{id}/pdf", (c, ctx) => c.GetPdf(ctx, ParseGuid(ctx, "id")));
+        Register<QuotationController>("GET",    "quotations/{id}",     (c, ctx) => c.GetById(ctx, ParseGuid(ctx, "id")));
+        Register<QuotationController>("PUT",    "quotations/{id}",     (c, ctx) => c.Update(ctx, ParseGuid(ctx, "id")));
+        Register<QuotationController>("DELETE", "quotations/{id}",     (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));
+
         // ── Invoices ──────────────────────────────────────────────────────────
         // ⚠ 具體路由必須排在萬用路由之前，否則 {id} 段會吸走具體片段：
         //   - invoices/quotations/{customerId}  → 具體第一段，最優先

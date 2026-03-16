@@ -293,8 +293,7 @@ internal class InvoicePdfDocument : IDocument
                 .DefaultTextStyle(ts => ts.FontSize(9f));
 
         static IContainer SumCell(IContainer c)
-            => c.Background(ColorSummaryBg)
-                .Border(0.5f).BorderColor("#d3d3d3")
+            => c.Border(0.5f).BorderColor("#d3d3d3")
                 .PaddingVertical(4).PaddingHorizontal(4)
                 .DefaultTextStyle(ts => ts.FontSize(9f));
     }

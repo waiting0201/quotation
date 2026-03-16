@@ -66,7 +66,9 @@ builder.Services.AddScoped<IncomeService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<InvoicePdfService>();
 builder.Services.AddScoped<LookupService>();
+builder.Services.AddScoped<QuotationPdfService>();
 builder.Services.AddScoped<PaymentService>();
+builder.Services.AddScoped<QuotationService>();
 builder.Services.AddScoped<UserService>();
 
 // ── Controllers ───────────────────────────────────────────────────────────
@@ -83,6 +85,7 @@ builder.Services.AddScoped<IncomeController>();
 builder.Services.AddScoped<InvoiceController>();
 builder.Services.AddScoped<LookupController>();
 builder.Services.AddScoped<PaymentController>();
+builder.Services.AddScoped<QuotationController>();
 builder.Services.AddScoped<UserController>();
 
 // ── Router ────────────────────────────────────────────────────────────────

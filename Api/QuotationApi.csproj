@@ -31,6 +31,7 @@
     <EmbeddedResource Include="Assets\brandeng.jpg" />
     <EmbeddedResource Include="Assets\color.jpg" />
     <EmbeddedResource Include="Assets\color1.jpg" />
+    <EmbeddedResource Include="Assets\stamp.jpg" />
   </ItemGroup>
 
 </Project>
