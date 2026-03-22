@@ -1,0 +1,13 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "JwtSecret": "your-jwt-secret-key-here",
+        "ConnectionStrings:DefaultConnection": "Server=localhost,1433;Database=quotation;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=true"
+    },
+    "Host": {
+        "CORS": "http://localhost:4200",
+        "CORSCredentials": true
+    }
+}

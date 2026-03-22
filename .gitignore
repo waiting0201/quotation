@@ -39,8 +39,15 @@ testem.log
 /typings
 __screenshots__/
 
+# .NET build output
+**/bin/
+**/obj/
+
 # Azure Storage emulator
 .azurite/
+
+# Local settings (contains connection strings / secrets)
+local.settings.json
 
 # System files
 .DS_Store
