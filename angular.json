@@ -54,7 +54,8 @@
             ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+            "outputPath": "dist/Admin"
           },
           "configurations": {
             "production": {
@@ -88,10 +89,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "quotation-app:build:production"
+              "buildTarget": "Admin:build:production"
             },
             "development": {
-              "buildTarget": "quotation-app:build:development"
+              "buildTarget": "Admin:build:development"
             }
           },
           "defaultConfiguration": "development"
