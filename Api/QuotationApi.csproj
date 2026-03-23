@@ -32,6 +32,8 @@
     <EmbeddedResource Include="Assets\color.jpg" />
     <EmbeddedResource Include="Assets\color1.jpg" />
     <EmbeddedResource Include="Assets\stamp.jpg" />
+    <EmbeddedResource Include="Assets\NotoSansTC-Regular.ttf" />
+    <EmbeddedResource Include="Assets\NotoSansTC-Bold.ttf" />
   </ItemGroup>
 
 </Project>

@@ -106,7 +106,7 @@ internal class InvoicePdfDocument : IDocument
             page.MarginRight(1, Unit.Centimetre);
             page.MarginBottom(0, Unit.Centimetre);
             page.DefaultTextStyle(ts => ts
-                .FontFamily("Microsoft JhengHei", "Arial", "sans-serif")
+                .FontFamily("Noto Sans TC")
                 .FontSize(FontBody)
                 .FontColor(ColorBlack));
 

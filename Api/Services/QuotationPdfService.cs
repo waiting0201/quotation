@@ -129,7 +129,7 @@ internal class QuotationPdfDocument : IDocument
             page.MarginRight(1, Unit.Centimetre);
             page.MarginBottom(0, Unit.Centimetre);
             page.DefaultTextStyle(ts => ts
-                .FontFamily("Microsoft JhengHei", "Arial", "sans-serif")
+                .FontFamily("Noto Sans TC")
                 .FontSize(FontBody)
                 .FontColor(ColorBlack));
 
@@ -155,7 +155,7 @@ internal class QuotationPdfDocument : IDocument
                 col.Item().PaddingBottom(4).Text(
                     "我已閱讀並同意上述條款(請親簽並蓋公司章)，這份資料將被認為一份法律合約。")
                     .FontSize(9f)
-                    .FontFamily("細明體", "MingLiU", "serif");
+                    .FontFamily("Noto Sans TC");
 
                 col.Item().PaddingBottom(4).Height(90).Row(row =>
                 {
@@ -223,41 +223,6 @@ internal class QuotationPdfDocument : IDocument
                     col.Item().PaddingTop(8).Element(ComposeRemark);
             });
         });
-
-        // ── 第二頁：架構說明（有 Details 時才顯示）──────────────────────
-        if (_quotation.Details.Count > 0)
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.MarginTop(1, Unit.Centimetre);
-                page.MarginLeft(1, Unit.Centimetre);
-                page.MarginRight(1, Unit.Centimetre);
-                page.MarginBottom(0, Unit.Centimetre);
-                page.DefaultTextStyle(ts => ts
-                    .FontFamily("Microsoft JhengHei", "Arial", "sans-serif")
-                    .FontSize(FontBody)
-                    .FontColor(ColorBlack));
-
-                page.Header().Column(col =>
-                {
-                    col.Item().Row(row =>
-                    {
-                        row.AutoItem().Height(18).Image(BrandImage).FitHeight();
-                        row.RelativeItem();
-                        row.AutoItem().Height(24).Image(BrandEngImage).FitHeight();
-                    });
-                    col.Item().PaddingTop(4).Height(5).Image(ColorStripe).FitWidth();
-                });
-
-                page.Footer().Height(12).Image(ColorStripe1).FitWidth();
-
-                page.Content().PaddingTop(8).Column(col =>
-                {
-                    col.Item().Element(ComposeSpecsSection);
-                });
-            });
-        }
     }
 
     // ── 1. 公司資訊 + 日期/單號方塊（仿 Tablix1 + Tablix3）───────────────
@@ -402,6 +367,7 @@ internal class QuotationPdfDocument : IDocument
         var subtotal = _quotation.Contents.Sum(c => c.Price ?? 0);
         var taxTotal = _quotation.Tax ?? 0;
         var grandTotal = _quotation.Total ?? (subtotal + taxTotal);
+        var taxType = _quotation.TaxType ?? 0;
 
         container.Table(table =>
         {
@@ -423,30 +389,64 @@ internal class QuotationPdfDocument : IDocument
                 header.Cell().Element(ThCell).AlignRight().Text("金額(NTD)");
             });
 
-            // ── 內容列
+            // ── 內容列（Contents）
+            var rowNo = 0;
             for (var i = 0; i < _quotation.Contents.Count; i++)
             {
+                rowNo++;
                 var c = _quotation.Contents[i];
-                table.Cell().Element(TdCell).AlignCenter().Text((i + 1).ToString());
+                table.Cell().Element(TdCell).AlignCenter().Text(rowNo.ToString());
                 table.Cell().Element(TdCell).AlignLeft().Text(c.Title ?? "");
                 table.Cell().Element(TdCell).AlignLeft().Text(c.Remark ?? "");
                 table.Cell().Element(TdCell).AlignRight().Text(Fmt(c.Price));
             }
 
-            // ── 小計
-            table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("小計");
-            table.Cell().Element(SumCell).AlignRight().Text(Fmt(subtotal));
+            // ── 明細列（Details，接續編號）
+            foreach (var d in _quotation.Details)
+            {
+                rowNo++;
+                table.Cell().Element(TdCell).AlignCenter().Text(rowNo.ToString());
+                table.Cell().Element(TdCell).AlignLeft().Text(d.Title ?? "");
+                table.Cell().Element(TdCell).AlignLeft().Text(d.Description ?? "");
+                table.Cell().Element(TdCell).AlignRight().Text(Fmt(d.Total));
+            }
 
-            // ── +營業稅5%
-            table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("+營業稅5%");
-            table.Cell().Element(SumCell).AlignRight().Text(Fmt(taxTotal));
+            // ── 合計區（依稅別顯示不同內容）
+            switch (taxType)
+            {
+                case 0: // 稅外加：小計 → +營業稅5% → 總計
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("小計");
+                    table.Cell().Element(SumCell).AlignRight().Text(Fmt(subtotal));
 
-            // ── 總計（紅字粗體，前綴 NT）
-            table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
-                .Text("總計").Bold();
-            table.Cell().Element(SumCell).AlignRight()
-                .Text($"NT{Fmt(grandTotal)}")
-                .Bold().FontColor(ColorRed);
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("+營業稅5%");
+                    table.Cell().Element(SumCell).AlignRight().Text(Fmt(taxTotal));
+
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
+                        .Text("總計").Bold();
+                    table.Cell().Element(SumCell).AlignRight()
+                        .Text($"NT{Fmt(grandTotal)}")
+                        .Bold().FontColor(ColorRed);
+                    break;
+
+                case 1: // 稅內含：合計（含稅）→ 內含營業稅（僅標示，不加總）
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
+                        .Text("合計（含稅）").Bold();
+                    table.Cell().Element(SumCell).AlignRight()
+                        .Text($"NT{Fmt(grandTotal)}")
+                        .Bold().FontColor(ColorRed);
+
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("內含營業稅");
+                    table.Cell().Element(SumCell).AlignRight().Text(Fmt(taxTotal));
+                    break;
+
+                default: // 免稅：只顯示合計
+                    table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
+                        .Text("合計").Bold();
+                    table.Cell().Element(SumCell).AlignRight()
+                        .Text($"NT{Fmt(grandTotal)}")
+                        .Bold().FontColor(ColorRed);
+                    break;
+            }
         });
 
         static IContainer ThCell(IContainer c)
@@ -490,51 +490,6 @@ internal class QuotationPdfDocument : IDocument
             col.Item().PaddingTop(2)
                 .Text(_quotation.Remark ?? "");
         });
-    }
-
-    // ── 9. 架構說明（仿 Rectangle4 + VwQuotationSpecsDataSet）───────────────
-
-    private void ComposeSpecsSection(IContainer container)
-    {
-        container.Column(col =>
-        {
-            col.Item().PaddingBottom(8).Text("架構說明")
-                .FontSize(FontProjectName).Bold();
-
-            col.Item().Table(table =>
-            {
-                table.ColumnsDefinition(cols =>
-                {
-                    cols.RelativeColumn(3);   // 子項目
-                    cols.RelativeColumn(5);   // 說明
-                });
-
-                // ── 表頭
-                table.Header(header =>
-                {
-                    header.Cell().Element(ThCell).AlignCenter().Text("子項目");
-                    header.Cell().Element(ThCell).AlignLeft().Text("說明");
-                });
-
-                // ── 明細列（使用 QuotationDetailItemDto）
-                foreach (var detail in _quotation.Details)
-                {
-                    table.Cell().Element(TdCell).AlignLeft().Text(detail.Title ?? "");
-                    table.Cell().Element(TdCell).AlignLeft().Text(detail.Description ?? "");
-                }
-            });
-        });
-
-        static IContainer ThCell(IContainer c)
-            => c.Background(ColorHeaderBg)
-                .Border(0.5f).BorderColor("#d3d3d3")
-                .PaddingVertical(4).PaddingHorizontal(4)
-                .DefaultTextStyle(ts => ts.FontSize(9f).Bold());
-
-        static IContainer TdCell(IContainer c)
-            => c.Border(0.5f).BorderColor("#d3d3d3")
-                .PaddingVertical(4).PaddingHorizontal(4)
-                .DefaultTextStyle(ts => ts.FontSize(9f));
     }
 
     // ── 輔助方法 ─────────────────────────────────────────────────────────────

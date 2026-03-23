@@ -16,6 +16,17 @@ using QuotationApi.Services;
 // QuestPDF Community License（開源專案免費使用）
 QuestPDF.Settings.License = LicenseType.Community;
 
+// 註冊嵌入式中文字型（Noto Sans TC Regular + Bold），解決非 Windows 環境 PDF 中文亂碼
+{
+    var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+    foreach (var fontFile in new[] { "NotoSansTC-Regular.ttf", "NotoSansTC-Bold.ttf" })
+    {
+        using var stream = assembly.GetManifestResourceStream($"QuotationApi.Assets.{fontFile}");
+        if (stream != null)
+            QuestPDF.Drawing.FontManager.RegisterFont(stream);
+    }
+}
+
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
