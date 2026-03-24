@@ -27,6 +27,9 @@ public class QuotationDetailDto
     /// <summary>含稅合計金額</summary>
     public int? Total { get; set; }
 
+    /// <summary>工作天數</summary>
+    public int? Workdays { get; set; }
+
     /// <summary>狀態：0=已報價, 1=已簽約, 2=已結案, 3=已取消</summary>
     public short? Status { get; set; }
 

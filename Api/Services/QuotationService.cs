@@ -106,6 +106,7 @@ public class QuotationService
                 i.taxtype           AS TaxType,
                 i.tax               AS Tax,
                 i.total             AS Total,
+                i.workdays          AS Workdays,
                 i.status            AS Status,
                 i.createdate        AS CreateDate
             FROM items i
@@ -183,6 +184,7 @@ public class QuotationService
             Taxtype          = dto.TaxType ?? 0,
             Payment          = dto.Payment?.Trim(),
             Remark           = dto.Remark?.Trim(),
+            Workdays         = dto.Workdays,
             Status           = dto.Status ?? 0,
             Tax              = tax,
             Total            = total,
@@ -227,6 +229,7 @@ public class QuotationService
         item.Taxtype          = dto.TaxType ?? item.Taxtype;
         item.Payment          = dto.Payment?.Trim();
         item.Remark           = dto.Remark?.Trim();
+        item.Workdays         = dto.Workdays;
         item.Status           = dto.Status ?? item.Status;
         item.Tax              = tax;
         item.Total            = total;

@@ -30,6 +30,9 @@ public class QuotationCreateUpdateDto
     /// <summary>備註（選填，上限 500 字）</summary>
     public string? Remark { get; set; }
 
+    /// <summary>工作天數（選填）</summary>
+    public int? Workdays { get; set; }
+
     /// <summary>狀態：0=已報價, 1=已簽約, 2=已結案, 3=已取消</summary>
     public short? Status { get; set; }
 
