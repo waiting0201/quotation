@@ -123,6 +123,7 @@ export class QuotationFormComponent implements OnInit {
       quotationDate: [today, Validators.required],
       expireDate: [null as string | null, Validators.required],
       taxType: [0],
+      workdays: [null as number | null],
       status: [0],
       payment: ['', Validators.required],
       remark: [''],
@@ -287,6 +288,7 @@ export class QuotationFormComponent implements OnInit {
             quotationDate: q.quotationDate ? q.quotationDate.substring(0, 10) : getTodayString(),
             expireDate: q.expireDate ? q.expireDate.substring(0, 10) : null,
             taxType: q.taxType ?? 0,
+            workdays: q.workdays ?? null,
             status: q.status ?? 0,
             payment: q.payment ?? '',
             remark: q.remark ?? '',
@@ -375,6 +377,7 @@ export class QuotationFormComponent implements OnInit {
       taxType: Number(v.taxType ?? 0),
       payment: v.payment?.trim() || '',
       remark: v.remark?.trim() || '',
+      workdays: v.workdays !== null && v.workdays !== '' ? Number(v.workdays) : null,
       status: Number(v.status ?? 0),
       details: (v.details ?? []).map((d: any) => ({
         itemDetailId: d.itemDetailId || null,

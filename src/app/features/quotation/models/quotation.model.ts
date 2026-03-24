@@ -29,6 +29,7 @@ export interface QuotationDetailResponse {
   enPayment: string;
   remark: string;
   enRemark: string;
+  workdays: number | null;
   status: number;
   details: QuotationDetailItem[];
   contents: QuotationContentItem[];
@@ -63,6 +64,7 @@ export interface QuotationCreateUpdateDto {
   taxType: number;
   payment: string;
   remark: string;
+  workdays: number | null;
   status: number;
   details: {
     itemDetailId: string | null;
