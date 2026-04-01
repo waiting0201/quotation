@@ -364,7 +364,8 @@ internal class QuotationPdfDocument : IDocument
 
     private void ComposeContentsTable(IContainer container)
     {
-        var subtotal = _quotation.Contents.Sum(c => c.Price ?? 0);
+        var subtotal = _quotation.Details.Sum(d => d.Total ?? 0)
+                     + _quotation.Contents.Sum(c => c.Price ?? 0);
         var taxTotal = _quotation.Tax ?? 0;
         var grandTotal = _quotation.Total ?? (subtotal + taxTotal);
         var taxType = _quotation.TaxType ?? 0;
