@@ -195,11 +195,11 @@ public class InvoiceController
             if (detail.Price.HasValue && detail.Price < 0)
                 return "發票金額不能為負數。";
 
-            if (detail.InvoiceNumber != null && detail.InvoiceNumber.Length > 50)
-                return "發票號碼不能超過 50 個字元。";
+            if (detail.InvoiceNumber != null && detail.InvoiceNumber.Length > 10)
+                return "發票號碼不能超過 10 個字元（例：AB12345678）。";
 
-            if (detail.Remark != null && detail.Remark.Length > 500)
-                return "明細備註不能超過 500 個字元。";
+            if (detail.Remark != null && detail.Remark.Length > 250)
+                return "明細備註不能超過 250 個字元。";
         }
 
         return null;
