@@ -258,7 +258,30 @@ internal class InvoicePdfDocument : IDocument
             {
                 var d = _invoice.Details[i];
                 table.Cell().Element(TdCell).AlignCenter().Text((i + 1).ToString());
-                table.Cell().Element(TdCell).AlignLeft().Text(d.Remark ?? "");
+                table.Cell().Element(TdCell).AlignLeft().Text(text =>
+                {
+                    // 內容欄：以報價單名稱為主，備註為輔（皆空時留白）
+                    var hasName = !string.IsNullOrWhiteSpace(d.ItemName);
+                    var hasRemark = !string.IsNullOrWhiteSpace(d.Remark);
+
+                    if (hasName)
+                    {
+                        if (hasRemark)
+                        {
+                            // 報價單名稱（首行）+ 備註（次行，灰色小字）
+                            text.Line(d.ItemName);
+                            text.Span(d.Remark).FontSize(8f).FontColor("#666666");
+                        }
+                        else
+                        {
+                            text.Span(d.ItemName);
+                        }
+                    }
+                    else if (hasRemark)
+                    {
+                        text.Span(d.Remark);
+                    }
+                });
                 table.Cell().Element(TdCell).AlignCenter().Text(d.InvoiceNumber ?? "");
                 table.Cell().Element(TdCell).AlignRight().Text(Fmt(d.Price));
             }
