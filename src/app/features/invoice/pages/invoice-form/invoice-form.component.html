@@ -241,10 +241,10 @@
                 />
               </div>
 
-              <!-- 金額 -->
+              <!-- 金額（未稅） -->
               <div class="detail-field">
                 <label class="form-label-sm">
-                  金額
+                  金額 (未稅)
                   <span class="required">*</span>
                 </label>
                 <input
@@ -258,6 +258,12 @@
                 @if (isDetailPriceInvalid(i)) {
                   <div class="form-error-sm">請輸入金額</div>
                 }
+              </div>
+
+              <!-- 稅額（自動計算） -->
+              <div class="detail-field">
+                <label class="form-label-sm">稅額</label>
+                <div class="detail-tax-value">NT$ {{ formatCurrency(rowTax(detail)) }}</div>
               </div>
 
               <!-- 備註 -->
@@ -279,9 +285,19 @@
 
       <!-- 金額摘要 -->
       @if (details.length > 0) {
-        <div class="summary-row">
-          <span class="summary-label">合計金額</span>
-          <span class="summary-value">NT$ {{ formatCurrency(subtotal) }}</span>
+        <div class="summary-box">
+          <div class="summary-row">
+            <span class="summary-label">合計稅額</span>
+            <span class="summary-value">NT$ {{ formatCurrency(totalTax) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">合計金額</span>
+            <span class="summary-value">NT$ {{ formatCurrency(subtotal) }}</span>
+          </div>
+          <div class="summary-row summary-row-total">
+            <span class="summary-label">總額</span>
+            <span class="summary-value">NT$ {{ formatCurrency(grandTotal) }}</span>
+          </div>
         </div>
       }
 

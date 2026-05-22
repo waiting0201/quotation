@@ -438,7 +438,7 @@
 // detail-fields: 所有欄位同一行
 .detail-fields {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1fr 2fr;
+  grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1fr 1fr 2fr;
   gap: 10px;
 }
 
@@ -503,15 +503,50 @@
   color: #FF6680;
 }
 
-// ─── Summary Row ─────────────────────────────────────────────────────────────
+// 稅額（唯讀，外觀對齊輸入框高度）
+.detail-tax-value {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00D4FF;
+  box-sizing: border-box;
+}
+
+// ─── Summary ─────────────────────────────────────────────────────────────────
+.summary-box {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #3C3C3C;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .summary-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #3C3C3C;
+
+  &.summary-row-total {
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid #3C3C3C;
+
+    .summary-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #D4D4D4;
+    }
+
+    .summary-value {
+      font-size: 18px;
+      color: #FF6680;
+    }
+  }
 }
 
 .summary-label {

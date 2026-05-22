@@ -14,6 +14,7 @@ import {
   FormBuilder,
   FormGroup,
   FormArray,
+  AbstractControl,
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -115,18 +116,54 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   addDetail(): void {
-    const today = getTodayString();
     this.details.push(
-      this.fb.group({
-        invoiceDetailId: [null],
-        itemId: [null as string | null],
-        invoiceType: [0],
-        invoiceDate: [today],
-        invoiceNumber: [''],
-        price: [null as number | null, Validators.required],
-        remark: [''],
+      this._createDetailGroup({
+        invoiceDetailId: null,
+        itemId: null,
+        itemTaxType: null,
+        invoiceType: 0,
+        invoiceDate: getTodayString(),
+        invoiceNumber: '',
+        price: null,
+        remark: '',
       })
     );
+  }
+
+  // 建立一筆明細 FormGroup，並監聽報價單變更以同步該列稅別（供即時算稅）
+  private _createDetailGroup(data: {
+    invoiceDetailId: string | null;
+    itemId: string | null;
+    itemTaxType: number | null;
+    invoiceType: number | null;
+    invoiceDate: string | null;
+    invoiceNumber: string;
+    price: number | null;
+    remark: string;
+  }): FormGroup {
+    const group = this.fb.group({
+      invoiceDetailId: [data.invoiceDetailId],
+      itemId: [data.itemId],
+      // 隱藏欄位：僅供前端即時算稅，不送後端（後端依關聯報價單重算）
+      itemTaxType: [data.itemTaxType],
+      invoiceType: [data.invoiceType ?? 0],
+      invoiceDate: [data.invoiceDate ?? getTodayString()],
+      invoiceNumber: [data.invoiceNumber ?? ''],
+      price: [data.price as number | null, Validators.required],
+      remark: [data.remark ?? ''],
+    });
+
+    group
+      .get('itemId')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((itemId) => {
+        const quot = this.quotations().find((q) => q.itemId === itemId);
+        group
+          .get('itemTaxType')!
+          .setValue(quot?.taxType ?? null, { emitEvent: false });
+      });
+
+    return group;
   }
 
   removeDetail(index: number): void {
@@ -252,6 +289,7 @@ export class InvoiceFormComponent implements OnInit {
     details: {
       invoiceDetailId: string | null;
       itemId: string | null;
+      itemTaxType?: number;
       invoiceType: number | null;
       invoiceDate: string | null;
       invoiceNumber: string;
@@ -262,27 +300,66 @@ export class InvoiceFormComponent implements OnInit {
     this.details.clear();
     for (const d of details) {
       this.details.push(
-        this.fb.group({
-          invoiceDetailId: [d.invoiceDetailId],
-          itemId: [d.itemId],
-          invoiceType: [d.invoiceType ?? 0],
-          invoiceDate: [
-            d.invoiceDate ? d.invoiceDate.substring(0, 10) : getTodayString(),
-          ],
-          invoiceNumber: [d.invoiceNumber ?? ''],
-          price: [d.price, Validators.required],
-          remark: [d.remark ?? ''],
+        this._createDetailGroup({
+          invoiceDetailId: d.invoiceDetailId,
+          itemId: d.itemId,
+          itemTaxType: d.itemTaxType ?? null,
+          invoiceType: d.invoiceType ?? 0,
+          invoiceDate: d.invoiceDate
+            ? d.invoiceDate.substring(0, 10)
+            : getTodayString(),
+          invoiceNumber: d.invoiceNumber ?? '',
+          price: d.price,
+          remark: d.remark ?? '',
         })
       );
     }
   }
 
+  // ─── Tax calculation（與後端 InvoiceService.CalculateTax 一致）──────────────
+  // .NET Math.Round 使用 banker's rounding（四捨六入五成雙），此處比照避免預覽與存檔不一致
+  private _roundHalfToEven(value: number): number {
+    const floor = Math.floor(value);
+    const diff = value - floor;
+    if (diff > 0.5) return floor + 1;
+    if (diff < 0.5) return floor;
+    return floor % 2 === 0 ? floor : floor + 1;
+  }
+
+  // 單筆明細稅額：依關聯報價單稅別 0=稅外加 1=稅內含 2/無=免稅
+  rowTax(ctrl: AbstractControl): number {
+    const price = Number(ctrl.get('price')?.value) || 0;
+    if (price <= 0) return 0;
+    switch (ctrl.get('itemTaxType')?.value) {
+      case 0:
+        return this._roundHalfToEven(price * 0.05);
+      case 1:
+        return price - this._roundHalfToEven(price / 1.05);
+      default:
+        return 0;
+    }
+  }
+
   // ─── Computed totals ──────────────────────────────────────────────────────
+  // 合計金額（未稅之和）
   get subtotal(): number {
     return this.details.controls.reduce((sum, ctrl) => {
       const price = ctrl.get('price')?.value;
       return sum + (Number(price) || 0);
     }, 0);
+  }
+
+  // 合計稅額
+  get totalTax(): number {
+    return this.details.controls.reduce(
+      (sum, ctrl) => sum + this.rowTax(ctrl),
+      0
+    );
+  }
+
+  // 總額（含稅）= 合計金額 + 合計稅額
+  get grandTotal(): number {
+    return this.subtotal + this.totalTax;
   }
 
   // ─── Save ─────────────────────────────────────────────────────────────────

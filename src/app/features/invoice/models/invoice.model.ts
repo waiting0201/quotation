@@ -4,8 +4,8 @@ export interface InvoiceListItem {
   customerId: number;
   customerName: string;
   requestDate: string;
-  tax: number;       // 0=稅外加, 1=稅內含, 2=免稅
-  total: number;
+  tax: number;       // 稅額合計（所有明細稅額之和）
+  total: number;     // 金額合計（所有明細 price 之和）
   status: number;    // 0=已開, 1=已寄出, 2=已入帳, 3=作廢
   createDate: string;
   hasIncomes: boolean;

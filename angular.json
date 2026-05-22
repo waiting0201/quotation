@@ -95,10 +95,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "Admin:build:production"
+              "buildTarget": "quotation-app:build:production"
             },
             "development": {
-              "buildTarget": "Admin:build:development"
+              "buildTarget": "quotation-app:build:development"
             }
           },
           "defaultConfiguration": "development"

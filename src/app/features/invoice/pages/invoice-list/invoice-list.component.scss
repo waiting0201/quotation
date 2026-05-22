@@ -125,7 +125,7 @@
 
 .skeleton-row {
   display: grid;
-  grid-template-columns: 18fr 22fr 13fr 10fr 12fr 12fr 13fr;
+  grid-template-columns: 18fr 27fr 15fr 15fr 12fr 13fr;
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid #353535;
@@ -150,7 +150,6 @@
   &.code    { width: 80%; }
   &.name    { width: 70%; }
   &.date    { width: 75%; }
-  &.tax     { width: 60%; }
   &.amount  { width: 70%; margin-left: auto; }
   &.status  { width: 65%; }
   &.actions { width: 55%; margin-left: auto; }
@@ -213,11 +212,6 @@
 .col-date {
   font-size: 13px;
   font-family: "JetBrains Mono", monospace;
-  color: #AAAAAA;
-}
-
-.col-tax {
-  font-size: 13px;
   color: #AAAAAA;
 }
 
@@ -592,8 +586,7 @@
   .skeleton-row {
     grid-template-columns: 20fr 26fr 14fr 14fr 14fr;
 
-    .skeleton-cell.date,
-    .skeleton-cell.tax { display: none; }
+    .skeleton-cell.date { display: none; }
   }
 }
 
@@ -624,8 +617,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
 
-    .skeleton-cell.date,
-    .skeleton-cell.tax { display: none; }
+    .skeleton-cell.date { display: none; }
   }
 
   // 表格轉卡片

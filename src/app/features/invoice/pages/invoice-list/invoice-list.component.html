@@ -50,7 +50,6 @@
           <div class="skeleton-cell code"></div>
           <div class="skeleton-cell name"></div>
           <div class="skeleton-cell date"></div>
-          <div class="skeleton-cell tax"></div>
           <div class="skeleton-cell amount"></div>
           <div class="skeleton-cell status"></div>
           <div class="skeleton-cell actions"></div>
@@ -65,10 +64,9 @@
       <thead>
         <tr>
           <th style="width: 18%">請款編號</th>
-          <th style="width: 22%">客戶名稱</th>
-          <th class="col-hide-mobile" style="width: 13%">請款日期</th>
-          <th class="col-hide-mobile" style="width: 10%">稅別</th>
-          <th style="width: 12%; text-align: right">金額</th>
+          <th style="width: 27%">客戶名稱</th>
+          <th class="col-hide-mobile" style="width: 15%">請款日期</th>
+          <th style="width: 15%; text-align: right">金額</th>
           <th style="width: 12%">狀態</th>
           <th style="width: 13%; text-align: right">操作</th>
         </tr>
@@ -76,7 +74,7 @@
       <tbody>
         @if (invoices().length === 0) {
           <tr>
-            <td colspan="7">
+            <td colspan="6">
               <div class="empty-state">
                 <div class="empty-icon">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -105,11 +103,6 @@
             <!-- 請款日期 -->
             <td class="col-hide-mobile col-date" data-label="請款日期">
               {{ formatDate(invoice.requestDate) }}
-            </td>
-
-            <!-- 稅別 -->
-            <td class="col-hide-mobile col-tax" data-label="稅別">
-              {{ getTaxLabel(invoice.tax) }}
             </td>
 
             <!-- 金額 -->

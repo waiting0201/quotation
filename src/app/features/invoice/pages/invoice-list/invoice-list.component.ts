@@ -15,13 +15,6 @@ import { InvoiceFacade } from '../../facades/invoice.facade';
 import { InvoiceApiService } from '../../services/invoice-api.service';
 import { InvoiceListItem } from '../../models/invoice.model';
 
-/** 稅別顯示名稱 */
-const TAX_LABELS: Record<number, string> = {
-  0: '稅外加',
-  1: '稅內含',
-  2: '免稅',
-};
-
 /** 狀態顯示設定 */
 const STATUS_CONFIG: Record<number, { label: string; cssClass: string }> = {
   0: { label: '已開',   cssClass: 'status-issued' },
@@ -181,10 +174,6 @@ export class InvoiceListComponent implements OnInit {
 
   formatAmount(amount: number): string {
     return `NT$${amount.toLocaleString()}`;
-  }
-
-  getTaxLabel(tax: number): string {
-    return TAX_LABELS[tax] ?? '—';
   }
 
   getStatusConfig(status: number): { label: string; cssClass: string } {
