@@ -105,9 +105,9 @@
               {{ formatDate(invoice.requestDate) }}
             </td>
 
-            <!-- 金額 -->
+            <!-- 金額（含稅總額，與明細頁總額一致） -->
             <td class="col-amount" data-label="金額">
-              {{ formatAmount(invoice.total) }}
+              {{ formatAmount(invoice.total + invoice.tax) }}
             </td>
 
             <!-- 狀態 -->
