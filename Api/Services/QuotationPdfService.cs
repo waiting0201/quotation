@@ -148,51 +148,8 @@ internal class QuotationPdfDocument : IDocument
                 col.Item().PaddingTop(4).Height(5).Image(ColorStripe).FitWidth();
             });
 
-            // ── Page Footer：確認聲明 + 簽名欄 + 彩色裝飾條 ──────────────
-            // Footer 高度 = 聲明文字(~16) + 簽名區(90) + 間距(10) + 裝飾條(12) ≈ 134pt
-            page.Footer().Column(col =>
-            {
-                col.Item().PaddingBottom(4).Text(
-                    "我已閱讀並同意上述條款(請親簽並蓋公司章)，這份資料將被認為一份法律合約。")
-                    .FontSize(9f)
-                    .FontFamily("Noto Sans TC");
-
-                col.Item().PaddingBottom(4).Height(90).Row(row =>
-                {
-                    // 左：客戶確認回簽（文字置底）
-                    row.RelativeItem().PaddingRight(10)
-                        .BorderBottom(0.5f).BorderColor(ColorBorder)
-                        .Column(sigCol =>
-                    {
-                        sigCol.Item().Shrink().Text(_customer?.Name ?? "")
-                            .FontSize(FontBody);
-                        sigCol.Item().Shrink().Text("客戶確認回簽")
-                            .FontSize(FontBody);
-                    });
-
-                    // 右：威庭科技用印欄（公司名 → 負責人 → 簽名圖）
-                    row.RelativeItem().PaddingLeft(10)
-                        .BorderBottom(0.5f).BorderColor(ColorBorder)
-                        .Column(sigCol =>
-                    {
-                        sigCol.Item().AlignRight()
-                            .Text("威庭科技有限公司 Weypro Technology Ltd.")
-                            .FontSize(FontBody);
-                        sigCol.Item().AlignRight()
-                            .Text("徐偉禎 Angela Hsu")
-                            .FontSize(FontBody);
-
-                        // 簽名檔圖片（仿 RDLC Image5 ID1001）
-                        if (StampImage.Length > 0)
-                        {
-                            sigCol.Item().AlignCenter().PaddingTop(2)
-                                .Image(StampImage).FitArea();
-                        }
-                    });
-                });
-
-                col.Item().Height(12).Image(ColorStripe1).FitWidth();
-            });
+            // ── Page Footer：彩色裝飾條（每頁顯示）──────────────────────
+            page.Footer().Height(12).Image(ColorStripe1).FitWidth();
 
             // ── Content ────────────────────────────────────────────────────
             page.Content().PaddingTop(8).Column(col =>
@@ -221,6 +178,10 @@ internal class QuotationPdfDocument : IDocument
                 // 8. 備註
                 if (!string.IsNullOrWhiteSpace(_quotation.Remark))
                     col.Item().PaddingTop(8).Element(ComposeRemark);
+
+                // 9. 簽名檔區塊：僅最後一頁顯示，貼齊頁底
+                col.Item().ExtendVertical();
+                col.Item().ShowEntire().Element(ComposeSignatureBlock);
             });
         });
     }
@@ -490,6 +451,55 @@ internal class QuotationPdfDocument : IDocument
                 .Bold().FontColor(ColorSectionTitle);
             col.Item().PaddingTop(2)
                 .Text(_quotation.Remark ?? "");
+        });
+    }
+
+    // ── 9. 簽名檔區塊（確認聲明 + 客戶/威庭簽名欄，僅最後一頁貼底顯示）──────
+
+    private void ComposeSignatureBlock(IContainer container)
+    {
+        container.Column(col =>
+        {
+            // 確認聲明
+            col.Item().PaddingBottom(4).Text(
+                "我已閱讀並同意上述條款(請親簽並蓋公司章)，這份資料將被認為一份法律合約。")
+                .FontSize(9f)
+                .FontFamily("Noto Sans TC");
+
+            // 簽名 Row（高度 90pt）
+            col.Item().PaddingBottom(4).Height(90).Row(row =>
+            {
+                // 左：客戶確認回簽（文字置底）
+                row.RelativeItem().PaddingRight(10)
+                    .BorderBottom(0.5f).BorderColor(ColorBorder)
+                    .Column(sigCol =>
+                {
+                    sigCol.Item().Shrink().Text(_customer?.Name ?? "")
+                        .FontSize(FontBody);
+                    sigCol.Item().Shrink().Text("客戶確認回簽")
+                        .FontSize(FontBody);
+                });
+
+                // 右：威庭科技用印欄（公司名 → 負責人 → 簽名圖）
+                row.RelativeItem().PaddingLeft(10)
+                    .BorderBottom(0.5f).BorderColor(ColorBorder)
+                    .Column(sigCol =>
+                {
+                    sigCol.Item().AlignRight()
+                        .Text("威庭科技有限公司 Weypro Technology Ltd.")
+                        .FontSize(FontBody);
+                    sigCol.Item().AlignRight()
+                        .Text("徐偉禎 Angela Hsu")
+                        .FontSize(FontBody);
+
+                    // 簽名檔圖片（仿 RDLC Image5 ID1001）
+                    if (StampImage.Length > 0)
+                    {
+                        sigCol.Item().AlignCenter().PaddingTop(2)
+                            .Image(StampImage).FitArea();
+                    }
+                });
+            });
         });
     }
 
