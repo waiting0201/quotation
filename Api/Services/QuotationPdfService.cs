@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Elements;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -148,8 +149,16 @@ internal class QuotationPdfDocument : IDocument
                 col.Item().PaddingTop(4).Height(5).Image(ColorStripe).FitWidth();
             });
 
-            // ── Page Footer：彩色裝飾條（每頁顯示）──────────────────────
-            page.Footer().Height(12).Image(ColorStripe1).FitWidth();
+            // ── Page Footer：固定預留簽名空間 + 彩色裝飾條 ───────────────
+            // 每頁 Footer 高度一致（含簽名預留區），確保分頁判斷把簽名算進去；
+            // 簽名實際內容僅於最後一頁渲染，前面各頁該區域留白。
+            page.Footer().Dynamic(new LastPageSignatureFooter
+            {
+                State = new LastPageSignatureFooter.SignatureState(
+                    CustomerName: _customer?.Name ?? "",
+                    StampImage: StampImage,
+                    ColorStripe: ColorStripe1)
+            });
 
             // ── Content ────────────────────────────────────────────────────
             page.Content().PaddingTop(8).Column(col =>
@@ -178,10 +187,6 @@ internal class QuotationPdfDocument : IDocument
                 // 8. 備註
                 if (!string.IsNullOrWhiteSpace(_quotation.Remark))
                     col.Item().PaddingTop(8).Element(ComposeRemark);
-
-                // 9. 簽名檔區塊：僅最後一頁顯示，貼齊頁底
-                col.Item().ExtendVertical();
-                col.Item().ShowEntire().Element(ComposeSignatureBlock);
             });
         });
     }
@@ -454,55 +459,6 @@ internal class QuotationPdfDocument : IDocument
         });
     }
 
-    // ── 9. 簽名檔區塊（確認聲明 + 客戶/威庭簽名欄，僅最後一頁貼底顯示）──────
-
-    private void ComposeSignatureBlock(IContainer container)
-    {
-        container.Column(col =>
-        {
-            // 確認聲明
-            col.Item().PaddingBottom(4).Text(
-                "我已閱讀並同意上述條款(請親簽並蓋公司章)，這份資料將被認為一份法律合約。")
-                .FontSize(9f)
-                .FontFamily("Noto Sans TC");
-
-            // 簽名 Row（高度 90pt）
-            col.Item().PaddingBottom(4).Height(90).Row(row =>
-            {
-                // 左：客戶確認回簽（文字置底）
-                row.RelativeItem().PaddingRight(10)
-                    .BorderBottom(0.5f).BorderColor(ColorBorder)
-                    .Column(sigCol =>
-                {
-                    sigCol.Item().Shrink().Text(_customer?.Name ?? "")
-                        .FontSize(FontBody);
-                    sigCol.Item().Shrink().Text("客戶確認回簽")
-                        .FontSize(FontBody);
-                });
-
-                // 右：威庭科技用印欄（公司名 → 負責人 → 簽名圖）
-                row.RelativeItem().PaddingLeft(10)
-                    .BorderBottom(0.5f).BorderColor(ColorBorder)
-                    .Column(sigCol =>
-                {
-                    sigCol.Item().AlignRight()
-                        .Text("威庭科技有限公司 Weypro Technology Ltd.")
-                        .FontSize(FontBody);
-                    sigCol.Item().AlignRight()
-                        .Text("徐偉禎 Angela Hsu")
-                        .FontSize(FontBody);
-
-                    // 簽名檔圖片（仿 RDLC Image5 ID1001）
-                    if (StampImage.Length > 0)
-                    {
-                        sigCol.Item().AlignCenter().PaddingTop(2)
-                            .Image(StampImage).FitArea();
-                    }
-                });
-            });
-        });
-    }
-
     // ── 輔助方法 ─────────────────────────────────────────────────────────────
 
     private static string Fmt(int? amount)
@@ -521,5 +477,94 @@ internal class QuotationPdfDocument : IDocument
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
         return ms.ToArray();
+    }
+
+    // ── Footer 動態元件：固定預留簽名空間，僅最後一頁渲染簽名內容 ────────────
+    //
+    // 為什麼用 Dynamic Component：
+    //   QuestPDF 的 Page 排版會先扣掉 Footer 高度才決定 Content 區可用高度。
+    //   把簽名區固定預留在 Footer 內，就能讓分頁演算法把簽名空間算進去；
+    //   再用 PageNumber == TotalPages 判斷是否為最後一頁，只在最後一頁渲染。
+    private sealed class LastPageSignatureFooter
+        : IDynamicComponent<LastPageSignatureFooter.SignatureState>
+    {
+        // 預留高度：聲明文字(~16) + 簽名 Row(90) + 緩衝 = 約 114pt
+        private const float SignatureBlockHeight = 114f;
+        private const float StripeHeight = 12f;
+        private const string ColorBorder = "#d3d3d3";
+        private const float FontBody = 9f;
+
+        public readonly record struct SignatureState(
+            string CustomerName,
+            byte[] StampImage,
+            byte[] ColorStripe);
+
+        public SignatureState State { get; set; }
+
+        public DynamicComponentComposeResult Compose(DynamicContext context)
+        {
+            var isLastPage = context.PageNumber == context.TotalPages;
+
+            var content = context.CreateElement(element =>
+            {
+                element.Column(col =>
+                {
+                    // 簽名區（固定高度；僅最後一頁渲染內容，否則留白佔位）
+                    col.Item().Height(SignatureBlockHeight).Element(c =>
+                    {
+                        if (!isLastPage) return;
+
+                        c.Column(sigCol =>
+                        {
+                            // 確認聲明
+                            sigCol.Item().PaddingBottom(4).Text(
+                                "我已閱讀並同意上述條款(請親簽並蓋公司章)，這份資料將被認為一份法律合約。")
+                                .FontSize(FontBody)
+                                .FontFamily("Noto Sans TC");
+
+                            // 簽名 Row（90pt）
+                            sigCol.Item().Height(90).Row(row =>
+                            {
+                                // 左：客戶確認回簽
+                                row.RelativeItem().PaddingRight(10)
+                                    .BorderBottom(0.5f).BorderColor(ColorBorder)
+                                    .Column(s =>
+                                    {
+                                        s.Item().Shrink().Text(State.CustomerName).FontSize(FontBody);
+                                        s.Item().Shrink().Text("客戶確認回簽").FontSize(FontBody);
+                                    });
+
+                                // 右：威庭科技用印
+                                row.RelativeItem().PaddingLeft(10)
+                                    .BorderBottom(0.5f).BorderColor(ColorBorder)
+                                    .Column(s =>
+                                    {
+                                        s.Item().AlignRight()
+                                            .Text("威庭科技有限公司 Weypro Technology Ltd.")
+                                            .FontSize(FontBody);
+                                        s.Item().AlignRight()
+                                            .Text("徐偉禎 Angela Hsu")
+                                            .FontSize(FontBody);
+                                        if (State.StampImage.Length > 0)
+                                        {
+                                            s.Item().AlignCenter().PaddingTop(2)
+                                                .Image(State.StampImage).FitArea();
+                                        }
+                                    });
+                            });
+                        });
+                    });
+
+                    // 彩色裝飾條（每頁都顯示）
+                    col.Item().Height(StripeHeight).Image(State.ColorStripe).FitWidth();
+                });
+            });
+
+            return new DynamicComponentComposeResult
+            {
+                Content = content,
+                HasMoreContent = false
+            };
+        }
     }
 }
