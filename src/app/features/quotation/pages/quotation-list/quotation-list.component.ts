@@ -116,6 +116,13 @@ export class QuotationListComponent implements OnInit {
     this.router.navigate(['/quotation/create']);
   }
 
+  goToDetail(quotation: QuotationListItem): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/quotation', quotation.itemId, 'detail'])
+    );
+    window.open(url, '_blank');
+  }
+
   goToEdit(quotation: QuotationListItem): void {
     this.router.navigate(['/quotation', quotation.itemId]);
   }

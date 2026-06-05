@@ -97,7 +97,7 @@
         }
 
         @for (quotation of quotations(); track quotation.itemId) {
-          <tr>
+          <tr class="clickable-row" (click)="goToDetail(quotation)">
             <!-- 報價單號 -->
             <td class="col-code" data-label="報價單號">{{ quotation.itemCode }}</td>
 
@@ -130,7 +130,7 @@
             </td>
 
             <!-- 操作 -->
-            <td class="col-actions" data-label="操作">
+            <td class="col-actions" data-label="操作" (click)="$event.stopPropagation()">
               <div class="action-group">
                 <button
                   class="btn-icon"

@@ -190,6 +190,14 @@
     &:hover {
       background: #303030;
     }
+
+    &.clickable-row {
+      cursor: pointer;
+
+      &:hover {
+        background: #2C2C30;
+      }
+    }
   }
 
   tbody td {
