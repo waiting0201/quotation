@@ -81,11 +81,40 @@ public class IncomeService
         return PaginatedResponse<IncomeListDto>.Create(items.AsList(), page, pageSize, totalCount);
     }
 
+    /// <summary>
+    /// 取得指定客戶可供入帳核銷的發票清單。
+    /// 僅回傳 incomeid IS NULL（尚未關聯任何入帳）且非作廢（status &lt;&gt; 3）的發票，
+    /// 依 createdate DESC 排序，供「新增入帳」勾選使用。
+    /// </summary>
+    public async Task<List<IncomeInvoiceOptionDto>> GetSelectableInvoicesAsync(int customerId)
+    {
+        const string sql = """
+            SELECT
+                i.invoiceid     AS InvoiceId,
+                i.invoicecode   AS InvoiceCode,
+                i.requestdate   AS RequestDate,
+                i.tax           AS Tax,
+                i.total         AS Total,
+                i.status        AS Status,
+                i.createdate    AS CreateDate
+            FROM invoices i
+            WHERE i.customerid = @CustomerId
+              AND i.incomeid IS NULL
+              AND i.status <> 3
+            ORDER BY i.createdate DESC
+            """;
+
+        var results = await _dapper.QueryAsync<IncomeInvoiceOptionDto>(sql, new { CustomerId = customerId });
+        return results.AsList();
+    }
+
     // ── 寫入 ────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// 新增收款記錄。
     /// 自動產生 INC{yyyyMMdd}{NNN} 編碼（依台北時區當日流水號遞增）。
+    /// 若 dto.InvoiceIds 有值，會在同一交易內將這些發票的 incomeid 指向新入帳（核銷）；
+    /// 僅核銷屬於同一客戶且尚未關聯其他入帳的發票，其餘忽略。
     /// </summary>
     public async Task<IncomeListDto> CreateAsync(IncomeCreateDto dto, Guid userId)
     {
@@ -106,6 +135,22 @@ public class IncomeService
         };
 
         _db.Incomes.Add(income);
+
+        // 核銷選取的發票：將其 incomeid 指向本次新入帳。
+        // 僅處理屬於同一客戶且尚未被其他入帳佔用（incomeid IS NULL）的發票，避免跨客戶或重複核銷。
+        if (dto.InvoiceIds.Count > 0)
+        {
+            var ids = dto.InvoiceIds.Distinct().ToList();
+            var invoices = await _db.Invoices
+                .Where(inv => ids.Contains(inv.Invoiceid)
+                           && inv.Customerid == dto.CustomerId
+                           && inv.Incomeid == null)
+                .ToListAsync();
+
+            foreach (var inv in invoices)
+                inv.Incomeid = income.Incomeid;
+        }
+
         await _db.SaveChangesAsync();
 
         // 重新以 Dapper 查詢，確保回傳的 CustomerName 已 JOIN
@@ -114,9 +159,10 @@ public class IncomeService
 
     /// <summary>
     /// 刪除收款記錄。
-    /// 若收款有關聯發票（invoices.incomeid = incomeid）則拒絕刪除，回傳業務錯誤訊息。
+    /// 刪除前先解除所有關聯發票的核銷（將 invoices.incomeid 設回 NULL），
+    /// 讓這些發票回到「未入帳」可再次核銷的狀態，再刪除收款本身。
     /// </summary>
-    /// <returns>(Found: false) 找不到記錄；(Error: non-null) 業務規則拒絕</returns>
+    /// <returns>(Found: false) 找不到記錄</returns>
     public async Task<(bool Found, string? Error)> DeleteAsync(Guid id)
     {
         var income = await _db.Incomes.FirstOrDefaultAsync(i => i.Incomeid == id);
@@ -124,10 +170,10 @@ public class IncomeService
         if (income == null)
             return (Found: false, Error: null);
 
-        // 刪除保護：有關聯發票的收款記錄不可刪除
-        var hasInvoices = await _db.Invoices.AnyAsync(inv => inv.Incomeid == id);
-        if (hasInvoices)
-            return (Found: true, Error: "此收款記錄已有關聯發票，無法刪除。");
+        // 解除核銷：關聯發票的 incomeid 設回 NULL，回到可選池
+        var linkedInvoices = await _db.Invoices.Where(inv => inv.Incomeid == id).ToListAsync();
+        foreach (var inv in linkedInvoices)
+            inv.Incomeid = null;
 
         _db.Incomes.Remove(income);
         await _db.SaveChangesAsync();
@@ -154,7 +200,9 @@ public class IncomeService
                 inc.incomedate  AS IncomeDate,
                 inc.remark      AS Remark,
                 inc.createdate  AS CreateDate,
-                CAST(0 AS BIT)  AS HasInvoices
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1 FROM invoices inv WHERE inv.incomeid = inc.incomeid
+                ) THEN 1 ELSE 0 END AS BIT) AS HasInvoices
             FROM incomes inc
             LEFT JOIN customers c ON c.customerid = inc.customerid
             WHERE inc.incomeid = @Id

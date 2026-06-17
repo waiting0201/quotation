@@ -133,6 +133,8 @@ public class RouteTable
         Register<InvoiceController>("DELETE", "invoices/{id}",                    (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));
 
         // ── Incomes ───────────────────────────────────────────────────────────
+        //   - incomes/invoices/{customerId} → 具體第一段，最優先（取客戶可核銷發票）
+        Register<IncomeController>("GET",    "incomes/invoices/{customerId}", (c, ctx) => c.GetSelectableInvoices(ctx, ParseInt(ctx, "customerId")));
         Register<IncomeController>("GET",    "incomes",      (c, ctx) => c.GetList(ctx));
         Register<IncomeController>("POST",   "incomes",      (c, ctx) => c.Create(ctx));
         Register<IncomeController>("DELETE", "incomes/{id}", (c, ctx) => c.Delete(ctx, ParseGuid(ctx, "id")));

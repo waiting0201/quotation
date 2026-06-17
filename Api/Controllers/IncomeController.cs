@@ -37,6 +37,21 @@ public class IncomeController
         return context.OkPaged(result);
     }
 
+    // ── GET /api/incomes/invoices/{customerId} ────────────────────────────
+
+    /// <summary>
+    /// 取得指定客戶可供入帳核銷的發票清單（incomeid IS NULL 且未作廢）。
+    /// 供「新增入帳」選取客戶後，列出可勾選的請款單。
+    /// </summary>
+    public async Task<IActionResult> GetSelectableInvoices(RouteContext context, int customerId)
+    {
+        if (customerId <= 0)
+            return context.BadRequest("客戶 ID 無效。");
+
+        var invoices = await _incomeService.GetSelectableInvoicesAsync(customerId);
+        return context.Ok(invoices);
+    }
+
     // ── POST /api/incomes ─────────────────────────────────────────────────
 
     /// <summary>

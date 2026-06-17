@@ -20,4 +20,11 @@ public class IncomeCreateDto
 
     /// <summary>備註</summary>
     public string? Remark { get; set; }
+
+    /// <summary>
+    /// 本次入帳要關聯（核銷）的請款單（發票）ID 清單。
+    /// 建立入帳後會將這些發票的 incomeid 指向新入帳；
+    /// 僅接受屬於同一客戶且尚未關聯其他入帳的發票。
+    /// </summary>
+    public List<Guid> InvoiceIds { get; set; } = new();
 }
