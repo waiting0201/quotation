@@ -232,7 +232,7 @@
           此操作無法復原。
         </p>
 
-        <!-- Warning: income has invoices -->
+        <!-- Warning: income has linked invoices (will be unlinked) -->
         @if (deleteDialog().hasInvoices) {
           <div class="warning-box">
             <svg class="warning-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -240,7 +240,7 @@
               <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
             <p class="warning-text">
-              此入帳紀錄有關聯的請款，<strong>無法刪除</strong>。請先移除相關請款後再執行。
+              此入帳紀錄有關聯的請款，刪除後這些請款將<strong>解除核銷</strong>，回到未入帳狀態。
             </p>
           </div>
         }
@@ -250,16 +250,14 @@
         <button class="btn-ghost" (click)="closeDeleteDialog()" [disabled]="loading()">
           取消
         </button>
-        @if (!deleteDialog().hasInvoices) {
-          <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
-            @if (loading()) {
-              <span class="spinner"></span>
-              刪除中...
-            } @else {
-              確認刪除
-            }
-          </button>
-        }
+        <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            刪除中...
+          } @else {
+            確認刪除
+          }
+        </button>
       </div>
     </div>
   </div>

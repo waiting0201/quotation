@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiListResponse, ApiResponse } from '../../../core/models/api-response.model';
-import { IncomeListItem, IncomeCreateDto, CustomerLookup } from '../models/income.model';
+import { IncomeListItem, IncomeCreateDto, CustomerLookup, IncomeInvoiceOption } from '../models/income.model';
 
 @Injectable({ providedIn: 'root' })
 export class IncomeApiService {
@@ -31,5 +31,10 @@ export class IncomeApiService {
       .set('page', 1)
       .set('pageSize', 9999);
     return this.http.get<ApiListResponse<CustomerLookup>>('/api/customers', { params });
+  }
+
+  /** 取得某客戶可核銷（尚未關聯入帳）的請款單清單 */
+  getSelectableInvoices(customerId: number): Observable<ApiResponse<IncomeInvoiceOption[]>> {
+    return this.http.get<ApiResponse<IncomeInvoiceOption[]>>(`/api/incomes/invoices/${customerId}`);
   }
 }

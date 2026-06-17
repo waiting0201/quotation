@@ -95,6 +95,39 @@
           }
         </div>
 
+        <!-- 請款單核銷勾選（選了客戶後出現） -->
+        @if (form.get('customerId')!.value) {
+          <div class="form-group full-width">
+            <label class="form-label">核銷請款單</label>
+
+            @if (loadingInvoices()) {
+              <div class="invoice-select-hint">載入請款單中...</div>
+            } @else if (invoices().length === 0) {
+              <div class="invoice-select-hint">此客戶目前沒有可核銷的請款單</div>
+            } @else {
+              <div class="invoice-select-list">
+                @for (inv of invoices(); track inv.invoiceId) {
+                  <label class="invoice-select-item" [class.selected]="isInvoiceSelected(inv.invoiceId)">
+                    <input
+                      type="checkbox"
+                      [checked]="isInvoiceSelected(inv.invoiceId)"
+                      (change)="toggleInvoice(inv.invoiceId)"
+                    />
+                    <span class="invoice-code">{{ inv.invoiceCode }}</span>
+                    <span class="invoice-status">{{ invoiceStatusLabel(inv.status) }}</span>
+                    <span class="invoice-date">{{ inv.requestDate ? (inv.requestDate | date: 'yyyy-MM-dd') : '—' }}</span>
+                    <span class="invoice-total">NT$ {{ (inv.total ?? 0) | number }}</span>
+                  </label>
+                }
+              </div>
+              <div class="invoice-select-summary">
+                已選 {{ selectedInvoiceIds().size }} 筆，合計
+                <strong>NT$ {{ selectedInvoiceTotal() | number }}</strong>
+              </div>
+            }
+          </div>
+        }
+
         <!-- 入帳日期 -->
         <div class="form-group">
           <label class="form-label">入帳日期</label>

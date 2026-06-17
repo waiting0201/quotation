@@ -9,11 +9,12 @@ import {
   HostListener,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IncomeApiService } from '../../services/income-api.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { CustomerLookup } from '../../models/income.model';
+import { CustomerLookup, IncomeInvoiceOption } from '../../models/income.model';
 
 function getTodayString(): string {
   const now = new Date(
@@ -28,7 +29,7 @@ function getTodayString(): string {
 @Component({
   selector: 'app-income-create',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
   templateUrl: './income-create.component.html',
   styleUrl: './income-create.component.scss',
 })
@@ -43,6 +44,17 @@ export class IncomeCreateComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly customers = signal<CustomerLookup[]>([]);
+
+  // ─── 可核銷請款單（發票）選擇 ──────────────────────────────────────────────
+  readonly invoices = signal<IncomeInvoiceOption[]>([]);
+  readonly loadingInvoices = signal(false);
+  readonly selectedInvoiceIds = signal<Set<string>>(new Set());
+  readonly selectedInvoiceTotal = computed(() => {
+    const selected = this.selectedInvoiceIds();
+    return this.invoices()
+      .filter((inv) => selected.has(inv.invoiceId))
+      .reduce((sum, inv) => sum + (inv.total ?? 0), 0);
+  });
 
   // ─── Customer searchable dropdown ─────────────────────────────────────────
   private readonly elRef = inject(ElementRef);
@@ -98,12 +110,57 @@ export class IncomeCreateComponent implements OnInit {
     this.selectedCustomerName.set(customer.name);
     this.customerSearch.set('');
     this.customerDropdownOpen.set(false);
+    this._loadInvoices(customer.customerId);
   }
 
   clearCustomer(): void {
     this.form.get('customerId')!.setValue(null);
     this.selectedCustomerName.set('');
     this.customerSearch.set('');
+    this.invoices.set([]);
+    this.selectedInvoiceIds.set(new Set());
+    this.form.get('amount')!.setValue(null);
+  }
+
+  // ─── 請款單勾選 ──────────────────────────────────────────────────────────
+  toggleInvoice(invoiceId: string): void {
+    const next = new Set(this.selectedInvoiceIds());
+    if (next.has(invoiceId)) {
+      next.delete(invoiceId);
+    } else {
+      next.add(invoiceId);
+    }
+    this.selectedInvoiceIds.set(next);
+    this._syncAmountFromSelection();
+  }
+
+  isInvoiceSelected(invoiceId: string): boolean {
+    return this.selectedInvoiceIds().has(invoiceId);
+  }
+
+  /** 勾選的請款單金額自動加總帶入「實收金額」（使用者仍可手動調整） */
+  private _syncAmountFromSelection(): void {
+    this.form.get('amount')!.setValue(this.selectedInvoiceTotal());
+  }
+
+  private _loadInvoices(customerId: number): void {
+    this.invoices.set([]);
+    this.selectedInvoiceIds.set(new Set());
+    // 重置金額，避免殘留前一位客戶勾選的加總值
+    this.form.get('amount')!.setValue(null);
+    this.loadingInvoices.set(true);
+    this.api.getSelectableInvoices(customerId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.invoices.set(res.data);
+          this.loadingInvoices.set(false);
+        },
+        error: () => {
+          this.notify.error('載入請款單資料失敗');
+          this.loadingInvoices.set(false);
+        },
+      });
   }
 
   // ─── Load customers ─────────────────────────────────────────────────────
@@ -131,12 +188,14 @@ export class IncomeCreateComponent implements OnInit {
     }
 
     const v = this.form.value;
+    const invoiceIds = Array.from(this.selectedInvoiceIds());
     const dto = {
       customerId: v.customerId,
       amount: v.amount ?? undefined,
       fee: v.fee ?? undefined,
       incomeDate: v.incomeDate || undefined,
       remark: v.remark?.trim() || undefined,
+      invoiceIds: invoiceIds.length > 0 ? invoiceIds : undefined,
     };
 
     this.saving.set(true);
@@ -163,5 +222,15 @@ export class IncomeCreateComponent implements OnInit {
   get customerIdInvalid(): boolean {
     const ctrl = this.form.get('customerId')!;
     return ctrl.invalid && ctrl.touched;
+  }
+
+  invoiceStatusLabel(status: number | null): string {
+    switch (status) {
+      case 0: return '已開';
+      case 1: return '已寄出';
+      case 2: return '已入帳';
+      case 3: return '作廢';
+      default: return '—';
+    }
   }
 }
