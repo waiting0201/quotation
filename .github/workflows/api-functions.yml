@@ -16,6 +16,11 @@ env:
   DOTNET_VERSION: "10.0.x"
   WORKING_DIRECTORY: Api
 
+# OIDC 登入需要 id-token 寫入權限（無長期憑證）
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -37,10 +42,17 @@ jobs:
       - name: Publish
         run: dotnet publish ${{ env.WORKING_DIRECTORY }}/QuotationApi.csproj -c Release -o ./output --no-build
 
+      # OIDC 登入：用 GitHub 的 federated credential 換取短期 token，無需儲存任何密碼/憑證
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: ./output
-          # 在 GitHub repo Settings → Secrets 設定 Function App 的發布設定檔
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          # 不使用 publish-profile，改用上一步 azure/login 的 OIDC 身分部署

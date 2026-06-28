@@ -25,23 +25,53 @@ git push github master            # 注意：會以 monorepo 歷史取代該 rep
 > 沿用既有 `waiting0201/quotation` repo 的好處：SWA 資源 `happy-pond-08d275d1e` 已連結，前端 token secret 已存在。
 > 若不想覆蓋原歷史，改開新 GitHub repo，並到 Azure Portal 將 SWA 重新連結到新 repo（會自動產生新的 deployment token）。
 
-### 2. GitHub Secrets
+### 2. 機密分兩層（重要觀念）
+
+| 層次 | 放哪裡 | 用途 |
+|------|--------|------|
+| **① 部署身分** | GitHub Secrets | 讓 GitHub Actions 有權部署到 Azure |
+| **② 執行時設定** | Azure Function App → Application Settings | App 跑起來要用的連線字串、JWT 金鑰等 |
+
+> `local.settings.json` 不會被部署（已 gitignore、publish 也不含），所以 DB 連線、JWT 金鑰**放 Azure App Settings，不放 GitHub**。
+
+#### ① GitHub Secrets
 
 於 GitHub repo → **Settings → Secrets and variables → Actions** 設定：
 
 | Secret | 用途 | 取得方式 |
 |--------|------|----------|
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_POND_08D275D1E` | 前端 SWA 部署 | Azure Portal → Static Web App → Manage deployment token（沿用既有） |
-| `AZURE_FUNCTIONAPP_PUBLISH_PROFILE` | API 部署 | Azure Portal → Function App → Get publish profile（下載 `.PublishSettings` 全文貼入） |
+| `AZURE_CLIENT_ID` | API OIDC 部署 | Entra ID App Registration 的 Application (client) ID |
+| `AZURE_TENANT_ID` | API OIDC 部署 | Entra ID 的 Directory (tenant) ID |
+| `AZURE_SUBSCRIPTION_ID` | API OIDC 部署 | 目標訂用帳戶 ID |
 
-### 3. Azure Functions App
+**OIDC 設定（API，無長期憑證）：**
+
+1. Entra ID → **App registrations → New registration**（或重用既有），記下 client ID、tenant ID。
+2. 該 App → **Certificates & secrets → Federated credentials → Add credential**：
+   - Scenario：**GitHub Actions deploying Azure resources**
+   - Organization / Repository：`waiting0201` / `quotation`
+   - Entity type：**Branch** → `master`（subject 會是 `repo:waiting0201/quotation:ref:refs/heads/master`）
+   - 若用 `workflow_dispatch` 手動觸發，可另加一筆 Environment 或 Branch 的 credential。
+3. 到目標 **Function App → Access control (IAM) → Add role assignment**，把該 App 指派 **Contributor**（或 **Website Contributor**）角色。
+4. 在 GitHub 設定上表三個 secret。`api-functions.yml` 已用 `azure/login@v2`（OIDC）+ `permissions: id-token: write`，無需 publish profile。
+
+> CLI 等價設定：`az ad app create` → `az ad app federated-credential create --parameters '{"name":"gh-master","issuer":"https://token.actions.githubusercontent.com","subject":"repo:waiting0201/quotation:ref:refs/heads/master","audiences":["api://AzureADTokenExchange"]}'` → `az role assignment create --assignee <clientId> --role Contributor --scope <functionApp resourceId>`。
+
+#### ② Azure Function App — Application Settings
 
 `api-functions.yml` 內 `AZURE_FUNCTIONAPP_NAME` 預設為 `quotation-api`，**部署前改成實際 App 名稱**。
 
-若尚未建立 Function App，需建立一個 **.NET 10 isolated / Functions v4 / Linux 或 Windows** 的 App，並設定以下 Application Settings（對應 `local.settings.json`）：
+若尚未建立 Function App，需建立一個 **.NET 10 isolated / Functions v4** 的 App，並於 **Application Settings** 設定（對應 `local.settings.json` 的 `Values`，正式值勿沿用本機）：
 
-- `AzureWebJobsStorage`（連到 Storage Account）
-- 資料庫連線字串、JWT 簽章金鑰、Claude API Key 等（不進版控的機密）
+| 名稱 | 說明 |
+|------|------|
+| `FUNCTIONS_WORKER_RUNTIME` | `dotnet-isolated`（必填） |
+| `AzureWebJobsStorage` | Storage 連線字串（建立 App 時通常自動帶入） |
+| `JwtSecret` | JWT 簽章金鑰（正式環境換強隨機字串） |
+| `ConnectionStrings:DefaultConnection` | 正式 SQL Server 連線字串 |
+
+CORS：Function App → **CORS** 加入前端 SWA 網址（如 `https://happy-pond-08d275d1e.azurestaticwebapps.net`）。
 
 ## 日常部署流程
 
