@@ -917,3 +917,32 @@ AiPromptBuilder 組裝 System Prompt：
 - **TypeScript 前端：** camelCase（變數、方法）、PascalCase（類別、介面）、kebab-case（檔案名稱）
 - **API 端點：** kebab-case（`/api/customer-types`）
 - **資料庫：** 沿用現有命名（全小寫）
+
+## 部署架構
+
+單一 repo（monorepo），前後端各自由根目錄的 GitHub Actions 部署。詳細 runbook 見 [`docs/deployment.md`](docs/deployment.md)。
+
+### Repo 結構
+- 前端 `Admin/`（Angular 21）與後端 `Api/`（Azure Functions, .NET 10）同一個 repo。
+- GitHub repo：`waiting0201/quotation`（master 為預設分支）。原本 `Admin/` 是 submodule，已扁平化合併；舊的純前端歷史保留在 tag `frontend-history-backup`。
+
+### CI/CD（`.github/workflows/`）
+| Workflow | 觸發路徑 | 目標 |
+|----------|----------|------|
+| `frontend-swa.yml` | `Admin/**` | Azure Static Web Apps（`happy-pond-08d275d1e`） |
+| `api-functions.yml` | `Api/**`、`global.json` | Azure Functions App `quotation-api`（Flex Consumption, .NET 10 isolated） |
+
+兩支都用 `paths:` 過濾互不干擾，並都有 `workflow_dispatch` 可手動觸發。
+
+### 認證
+- 前端 SWA：用 deployment token（GitHub secret `AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_POND_08D275D1E`）。
+- API：用 **OIDC**（federated credential，無長期憑證），GitHub secrets：`AZURE_CLIENT_ID`／`AZURE_TENANT_ID`／`AZURE_SUBSCRIPTION_ID`。App registration `quotation-github-actions` 對 `quotation-api` 有 Contributor。federated credential subject 綁 `repo:waiting0201/quotation:ref:refs/heads/master`（換分支或改用 environment 觸發時需另加 credential）。
+
+### 機密分層（重要）
+- **部署身分** → GitHub Secrets。
+- **執行時設定**（DB 連線、JWT 金鑰）→ Azure Function App。`local.settings.json` 不會被部署。
+  - `JwtSecret` 在 **App settings**；`DefaultConnection` 在 **Connection strings** 分頁（兩者是分開的）。
+- Flex Consumption 的 runtime 存在 `functionAppConfig.runtime`，不是舊的 `linuxFxVersion`／`FUNCTIONS_WORKER_RUNTIME`（所以後者不存在是正常的）。
+
+### 注意事項
+- **force push 不相關歷史會跳過 `paths` 過濾的 workflow**（GitHub 無法算出變更檔案）。首次部署需用一個有共同祖先的正常 commit 觸發，或用 `workflow_dispatch` 手動執行。
