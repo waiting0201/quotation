@@ -1,0 +1,14 @@
+// ============================================
+// Breadcrumb 科技風樣式
+// ============================================
+
+.breadcrumb-link {
+  color: #969696;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 150ms;
+
+  &:hover {
+    color: #00D4FF;
+  }
+}

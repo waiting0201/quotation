@@ -1,0 +1,136 @@
+<!-- Modal Overlay -->
+<div class="modal-overlay" (click)="onCancel()">
+  <!-- Dialog (stop propagation) -->
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <!-- Neon top line (cyan) -->
+    <div class="modal-neon-line"></div>
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-title-icon">
+          @if (isEditMode()) {
+            <!-- Edit icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          } @else {
+            <!-- Add icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          }
+        </span>
+        {{ dialogTitle() }}
+      </div>
+      <button type="button" class="modal-close" (click)="onCancel()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <form id="hostForm" [formGroup]="form" (ngSubmit)="onSave()">
+
+        <!-- 維護項目名稱 (整行) -->
+        <div class="form-group">
+          <label class="form-label">
+            維護項目名稱
+            <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-input"
+            [class.error]="itemInvalid"
+            formControlName="item"
+            placeholder="請輸入維護項目名稱，例如：ABC公司官網"
+            autocomplete="off"
+          />
+          @if (itemInvalid) {
+            <div class="form-error">
+              @if (itemControl.errors?.['required']) {
+                請輸入維護項目名稱
+              } @else if (itemControl.errors?.['maxlength']) {
+                名稱不可超過 200 個字元
+              }
+            </div>
+          }
+        </div>
+
+        <!-- 網站網址 (整行) -->
+        <div class="form-group">
+          <label class="form-label">網站網址</label>
+          <input
+            type="text"
+            class="form-input"
+            [class.error]="urlInvalid"
+            formControlName="url"
+            placeholder="https://example.com"
+            autocomplete="off"
+          />
+          @if (urlInvalid) {
+            <div class="form-error">
+              @if (urlControl.errors?.['maxlength']) {
+                網址不可超過 500 個字元
+              }
+            </div>
+          }
+        </div>
+
+        <!-- 開始日期 + 到期日期 (兩欄) -->
+        <div class="form-row-2col">
+
+          <!-- 開始日期 -->
+          <div class="form-group">
+            <label class="form-label">開始日期</label>
+            <input
+              type="date"
+              class="form-input form-date"
+              formControlName="startDate"
+            />
+          </div>
+
+          <!-- 到期日期 -->
+          <div class="form-group">
+            <label class="form-label">到期日期</label>
+            <input
+              type="date"
+              class="form-input form-date"
+              formControlName="expireDate"
+            />
+          </div>
+
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" (click)="onCancel()" [disabled]="saving()">
+        取消
+      </button>
+      <button
+        type="submit"
+        form="hostForm"
+        class="btn-primary"
+        [disabled]="saving()"
+      >
+        @if (saving()) {
+          <span class="spinner"></span>
+          儲存中...
+        } @else {
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          儲存
+        }
+      </button>
+    </div>
+
+  </div>
+</div>

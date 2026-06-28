@@ -1,0 +1,264 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-header-icon">
+      <!-- Dollar sign icon -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">入帳清單</h1>
+      <p class="page-subtitle">管理入帳紀錄與追蹤</p>
+    </div>
+  </div>
+  <button class="btn-primary" (click)="goToCreate()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    新增入帳
+  </button>
+</div>
+
+<!-- Data Table Panel -->
+<div class="panel">
+
+  <!-- Search bar -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="搜尋客戶名稱或入帳編號..."
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <!-- Loading skeleton -->
+  @if (loading()) {
+    <div class="loading-rows">
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="skeleton-row">
+          <div class="skeleton-cell code"></div>
+          <div class="skeleton-cell name"></div>
+          <div class="skeleton-cell date"></div>
+          <div class="skeleton-cell amount"></div>
+          <div class="skeleton-cell fee"></div>
+          <div class="skeleton-cell remark"></div>
+          <div class="skeleton-cell actions"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading()) {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 18%">入帳編號</th>
+          <th style="width: 22%">客戶名稱</th>
+          <th class="col-hide-mobile" style="width: 13%">入帳日期</th>
+          <th style="width: 15%; text-align: right">實收金額</th>
+          <th class="col-hide-mobile" style="width: 12%; text-align: right">扣除額</th>
+          <th class="col-hide-mobile" style="width: 12%">備註</th>
+          <th style="width: 8%; text-align: right">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (incomes().length === 0) {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </div>
+                <p class="empty-text">尚無入帳資料</p>
+                <p class="empty-sub">點擊「新增入帳」建立第一筆入帳紀錄</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        @for (income of incomes(); track income.incomeId) {
+          <tr>
+            <!-- 入帳編號 -->
+            <td class="col-code" data-label="入帳編號">{{ income.incomeCode }}</td>
+
+            <!-- 客戶名稱 -->
+            <td class="col-name" data-label="客戶名稱">{{ income.customerName || '—' }}</td>
+
+            <!-- 入帳日期 -->
+            <td class="col-hide-mobile col-date" data-label="入帳日期">
+              {{ formatDate(income.incomeDate) }}
+            </td>
+
+            <!-- 實收金額 -->
+            <td class="col-amount" data-label="實收金額">
+              {{ formatAmount(income.amount) }}
+            </td>
+
+            <!-- 扣除額 -->
+            <td class="col-hide-mobile col-fee" data-label="扣除額">
+              @if (income.fee && income.fee > 0) {
+                {{ formatAmount(income.fee) }}
+              } @else {
+                <span class="no-value">—</span>
+              }
+            </td>
+
+            <!-- 備註 -->
+            <td class="col-hide-mobile col-remark" data-label="備註">
+              @if (income.remark) {
+                <span class="remark-text" [title]="income.remark">{{ income.remark }}</span>
+              } @else {
+                <span class="no-value">—</span>
+              }
+            </td>
+
+            <!-- 操作 -->
+            <td class="col-actions" data-label="操作">
+              <div class="action-group">
+                <button
+                  class="btn-icon danger"
+                  title="刪除入帳"
+                  (click)="openDeleteDialog(income)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (totalCount() > 0) {
+      <div class="pagination">
+        <div class="pagination-info">
+          共 {{ totalCount() }} 筆，第 {{ currentPage() }}/{{ totalPages() }} 頁
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="page-btn"
+            [disabled]="currentPage() <= 5"
+            (click)="goToPage(currentPage() - 5)"
+            title="前 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 18 5 12 11 6"/><polyline points="19 18 13 12 19 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+            title="上一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+
+          @for (p of pageNumbers(); track p) {
+            <button
+              class="page-btn"
+              [class.active]="p === currentPage()"
+              (click)="goToPage(p)"
+            >
+              {{ p }}
+            </button>
+          }
+
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+            title="下一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() + 5 > totalPages()"
+            (click)="goToPage(currentPage() + 5)"
+            title="後 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="5 18 11 12 5 6"/><polyline points="13 18 19 12 13 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<!-- Delete Confirm Dialog -->
+@if (deleteDialog().open) {
+  <div class="modal-overlay" (click)="closeDeleteDialog()">
+    <div class="confirm-dialog" (click)="$event.stopPropagation()">
+
+      <!-- Neon line (red for danger) -->
+      <div class="confirm-neon-line"></div>
+
+      <div class="confirm-body">
+        <!-- Icon -->
+        <div class="confirm-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </div>
+
+        <h3 class="confirm-title">刪除入帳記錄</h3>
+        <p class="confirm-message">
+          確定要刪除「<strong>{{ deleteDialog().incomeCode }}</strong>」嗎？<br>
+          此操作無法復原。
+        </p>
+
+        <!-- Warning: income has linked invoices (will be unlinked) -->
+        @if (deleteDialog().hasInvoices) {
+          <div class="warning-box">
+            <svg class="warning-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <p class="warning-text">
+              此入帳紀錄有關聯的請款，刪除後這些請款將<strong>解除核銷</strong>，回到未入帳狀態。
+            </p>
+          </div>
+        }
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-ghost" (click)="closeDeleteDialog()" [disabled]="loading()">
+          取消
+        </button>
+        <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            刪除中...
+          } @else {
+            確認刪除
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

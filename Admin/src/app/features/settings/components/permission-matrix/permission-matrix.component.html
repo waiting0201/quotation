@@ -1,0 +1,93 @@
+<div class="permission-matrix">
+  <!-- Matrix Header -->
+  <div class="perm-matrix-header">
+    <div class="col-label">功能項目</div>
+    @for (f of permFields; track f) {
+      <div class="col-perm">{{ fieldLabels[f] }}</div>
+    }
+  </div>
+
+  <!-- Empty state -->
+  @if (categories().length === 0) {
+    <div class="perm-empty">
+      <span>載入權限設定中...</span>
+    </div>
+  }
+
+  <!-- Categories -->
+  @for (cat of categories(); track cat.limId) {
+    <div class="perm-category">
+      <!-- Category header row -->
+      <div class="perm-category-header" (click)="toggleExpand(cat.limId)">
+        <div class="perm-category-title">
+          <span
+            class="expand-icon"
+            [ngClass]="{ expanded: isExpanded(cat.limId) }"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </span>
+          <span class="cat-name">{{ cat.value }}</span>
+        </div>
+
+        @for (f of permFields; track f) {
+          <div class="col-perm" (click)="$event.stopPropagation()">
+            <div class="checkbox-wrapper">
+              <label class="custom-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="getCategoryCheckState(cat, f) === true"
+                  [class.indeterminate]="getCategoryCheckState(cat, f) === 'indeterminate'"
+                  (change)="onCategoryChange(cat, f, $any($event.target).checked)"
+                  (click)="$event.stopPropagation()"
+                />
+                <span class="checkmark">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    @if (getCategoryCheckState(cat, f) === 'indeterminate') {
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    } @else {
+                      <polyline points="20 6 9 17 4 12"/>
+                    }
+                  </svg>
+                </span>
+              </label>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Children rows -->
+      @if (isExpanded(cat.limId) && getChildren(cat).length > 0) {
+        <div class="perm-items">
+          @for (item of getChildren(cat); track item.limId) {
+            <div class="perm-item">
+              <div class="perm-item-name">
+                <span class="dot"></span>
+                {{ item.value }}
+              </div>
+              @for (f of permFields; track f) {
+                <div class="col-perm">
+                  <div class="checkbox-wrapper">
+                    <label class="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="getPermValue(item.limId, f)"
+                        (change)="onItemChange(item.limId, f, $any($event.target).checked)"
+                      />
+                      <span class="checkmark">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

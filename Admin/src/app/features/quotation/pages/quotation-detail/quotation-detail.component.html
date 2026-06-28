@@ -1,0 +1,223 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <button class="btn-back" (click)="goBack()" title="返回清單">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <div class="page-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">報價單詳情</h1>
+      <p class="page-subtitle">{{ quotation()?.itemCode ?? '載入中…' }}</p>
+    </div>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn-outline" (click)="downloadPdf()" [disabled]="loading() || !quotation()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      下載 PDF
+    </button>
+    <button class="btn-primary" (click)="goToEdit()" [disabled]="loading() || !quotation()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      編輯
+    </button>
+  </div>
+</div>
+
+<!-- Loading Skeleton -->
+@if (loading()) {
+  <div class="panel">
+    <div class="skeleton-header"></div>
+    <div class="skeleton-body">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="skeleton-field">
+          <div class="skeleton-label"></div>
+          <div class="skeleton-value"></div>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="panel">
+    <div class="skeleton-header"></div>
+    <div class="skeleton-table">
+      @for (_ of [1,2,3]; track $index) {
+        <div class="skeleton-row"></div>
+      }
+    </div>
+  </div>
+}
+
+@if (!loading() && quotation(); as q) {
+
+  <!-- Panel: 基本資料 -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">基本資料</h2>
+      <span class="status-badge status-{{ getStatusClass(q.status) }}">
+        <span class="status-dot"></span>
+        {{ getStatusLabel(q.status) }}
+      </span>
+    </div>
+    <div class="info-grid">
+      <div class="info-field">
+        <span class="info-label">客戶名稱</span>
+        <span class="info-value">{{ q.customerName || '—' }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">標題</span>
+        <span class="info-value">{{ q.name || '—' }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">報價日期</span>
+        <span class="info-value">{{ formatDate(q.quotationDate) }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">有效日期</span>
+        <span class="info-value">{{ formatDate(q.expireDate) }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">付款條件</span>
+        <span class="info-value">{{ q.payment || '—' }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">工期</span>
+        <span class="info-value">{{ q.workdays != null ? q.workdays + ' 天' : '—' }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">稅別</span>
+        <span class="tax-badge tax-{{ getTaxClass(q.taxType) }}">{{ getTaxLabel(q.taxType) }}</span>
+      </div>
+      <div class="info-field">
+        <span class="info-label">狀態</span>
+        <span class="status-badge status-{{ getStatusClass(q.status) }}">
+          <span class="status-dot"></span>
+          {{ getStatusLabel(q.status) }}
+        </span>
+      </div>
+      @if (q.remark) {
+        <div class="info-field info-field--full">
+          <span class="info-label">備註</span>
+          <span class="info-value info-value--remark">{{ q.remark }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Panel: 報價明細 -->
+  @if (q.details.length > 0) {
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">報價明細</h2>
+        <span class="count-badge">{{ q.details.length }} 項</span>
+      </div>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th class="th-num">#</th>
+              <th class="th-title">項目名稱</th>
+              <th class="th-desc">說明</th>
+              <th class="th-num-right">數量</th>
+              <th class="th-num-right">頻率</th>
+              <th class="th-money">單價</th>
+              <th class="th-money">小計</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of q.details; track $index) {
+              <tr>
+                <td class="td-num">{{ $index + 1 }}</td>
+                <td class="td-title">{{ item.title }}</td>
+                <td class="td-desc">{{ item.description || '—' }}</td>
+                <td class="td-right">{{ item.quantity }}</td>
+                <td class="td-right">{{ item.freq }}</td>
+                <td class="td-money">{{ formatAmount(item.price) }}</td>
+                <td class="td-money td-subtotal">{{ formatAmount(item.total) }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="tfoot-row">
+              <td colspan="6" class="tfoot-label">明細小計</td>
+              <td class="tfoot-value">{{ formatAmount(detailSubtotal()) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Panel: 服務內容 -->
+  @if (q.contents.length > 0) {
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">服務內容</h2>
+        <span class="count-badge">{{ q.contents.length }} 項</span>
+      </div>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th class="th-num">#</th>
+              <th class="th-title">類型</th>
+              <th class="th-desc">說明</th>
+              <th class="th-num-right">頻率</th>
+              <th class="th-money">單價</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (content of q.contents; track $index) {
+              <tr>
+                <td class="td-num">{{ $index + 1 }}</td>
+                <td class="td-title">{{ content.title }}</td>
+                <td class="td-desc">{{ content.remark || '—' }}</td>
+                <td class="td-right">{{ content.freq }}</td>
+                <td class="td-money">{{ formatAmount(content.price) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Panel: 金額摘要 -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">金額摘要</h2>
+    </div>
+    <div class="summary-body">
+      <div class="summary-block">
+        <div class="summary-row">
+          <span class="summary-label">未稅合計</span>
+          <span class="summary-value">{{ formatAmount(pretaxTotal()) }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">稅額（{{ getTaxLabel(q.taxType) }}）</span>
+          <span class="summary-value">{{ formatAmount(q.tax) }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row summary-row--grand">
+          <span class="summary-label-grand">含稅總額</span>
+          <span class="summary-grand">{{ formatAmount(q.total) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+}

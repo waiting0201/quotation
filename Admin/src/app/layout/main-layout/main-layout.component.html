@@ -1,0 +1,33 @@
+<!-- Mobile 遮罩 -->
+@if (isMobile() && mobileMenuOpen()) {
+  <div
+    class="fixed inset-0 z-[39] transition-opacity duration-200"
+    style="background: rgba(0,0,0,0.7);"
+    (click)="closeMobileMenu()"
+  ></div>
+}
+
+<!-- Sidebar -->
+<app-sidebar
+  [collapsed]="isCollapsed"
+  [mobileMode]="isMobile()"
+  [mobileOpen]="mobileMenuOpen()"
+/>
+
+<div
+  class="app-layout"
+  [class.sidebar-mini]="isCollapsed"
+  [class.sidebar-hidden]="isMobile()"
+>
+  <app-header
+    [sidebarCollapsed]="isCollapsed"
+    [isMobile]="isMobile()"
+    (toggleSidebar)="toggleSidebar()"
+  />
+
+  <app-breadcrumb />
+
+  <main class="p-4 md:p-6" style="background-color: #1E1E1E; min-height: calc(100vh - var(--header-height) - var(--ribbon-height));">
+    <router-outlet />
+  </main>
+</div>

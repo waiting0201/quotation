@@ -1,0 +1,328 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">使用者管理</h1>
+      <p class="page-subtitle">管理系統使用者帳號與權限設定</p>
+    </div>
+  </div>
+  <button class="btn-primary" (click)="openCreateDialog()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    新增使用者
+  </button>
+</div>
+
+<!-- Data Table Panel -->
+<div class="panel">
+
+  <!-- Loading skeleton -->
+  @if (loading()) {
+    <div class="loading-rows">
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="skeleton-row">
+          <div class="skeleton-cell name"></div>
+          <div class="skeleton-cell email"></div>
+          <div class="skeleton-cell group"></div>
+          <div class="skeleton-cell status"></div>
+          <div class="skeleton-cell time"></div>
+          <div class="skeleton-cell actions"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading()) {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 14%">姓名</th>
+          <th style="width: 22%">Email</th>
+          <th style="width: 16%">群組</th>
+          <th style="width: 10%">狀態</th>
+          <th class="col-hide-mobile" style="width: 18%">更新時間</th>
+          <th style="width: 20%; text-align: right">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (users().length === 0) {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <p class="empty-text">尚無使用者資料</p>
+                <p class="empty-sub">點擊「新增使用者」建立第一個帳號</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        @for (user of users(); track user.userId) {
+          <tr>
+            <td class="col-name" data-label="姓名">{{ user.name }}</td>
+            <td class="col-email" data-label="Email">{{ user.email }}</td>
+            <td data-label="群組">
+              @if (user.groupTitle) {
+                <span class="group-badge">{{ user.groupTitle }}</span>
+              } @else {
+                <span class="no-group">未指定</span>
+              }
+            </td>
+            <td data-label="狀態">
+              <span class="status-badge" [class.active]="user.status">
+                {{ user.status ? '啟用' : '停用' }}
+              </span>
+            </td>
+            <td class="col-time col-hide-mobile" data-label="更新時間">{{ formatDate(user.updateTime) }}</td>
+            <td class="col-actions" data-label="操作">
+              <div class="action-group">
+                <button
+                  class="btn-icon"
+                  title="編輯使用者"
+                  (click)="openEditDialog(user)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button
+                  class="btn-icon warning"
+                  title="變更密碼"
+                  (click)="openPasswordDialog(user)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </button>
+                <button
+                  class="btn-icon danger"
+                  title="刪除使用者"
+                  (click)="openDeleteDialog(user)"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (totalCount() > 0) {
+      <div class="pagination">
+        <div class="pagination-info">
+          共 {{ totalCount() }} 筆，第 {{ currentPage() }}/{{ totalPages() }} 頁
+        </div>
+        <div class="pagination-buttons">
+          <button
+            class="page-btn"
+            [disabled]="currentPage() <= 5"
+            (click)="goToPage(currentPage() - 5)"
+            title="前 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 18 5 12 11 6"/><polyline points="19 18 13 12 19 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+            title="上一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+
+          @for (p of pageNumbers(); track p) {
+            <button
+              class="page-btn"
+              [class.active]="p === currentPage()"
+              (click)="goToPage(p)"
+            >
+              {{ p }}
+            </button>
+          }
+
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+            title="下一頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() + 5 > totalPages()"
+            (click)="goToPage(currentPage() + 5)"
+            title="後 5 頁"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="5 18 11 12 5 6"/><polyline points="13 18 19 12 13 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<!-- User Form Dialog -->
+@if (formDialogOpen()) {
+  <app-user-form-dialog
+    [user]="selectedUser()"
+    [groups]="groups()"
+    [permissionTree]="permissionTree()"
+    [saving]="saving()"
+    (saved)="onFormSaved($event)"
+    (cancelled)="closeFormDialog()"
+  />
+}
+
+<!-- Password Change Dialog -->
+@if (passwordDialog().open) {
+  <div class="modal-overlay" (click)="closePasswordDialog()">
+    <div class="confirm-dialog password-dialog" (click)="$event.stopPropagation()">
+
+      <!-- Neon line (warning yellow) -->
+      <div class="password-neon-line"></div>
+
+      <div class="confirm-body">
+        <!-- Icon -->
+        <div class="password-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+
+        <h3 class="confirm-title">變更密碼</h3>
+        <p class="confirm-message">
+          為「<strong>{{ passwordDialog().userName }}</strong>」設定新密碼
+        </p>
+
+        <!-- Password form -->
+        <div class="password-form" [formGroup]="passwordForm">
+          <div class="password-form-group">
+            <label class="password-form-label">新密碼 <span class="required">*</span></label>
+            <input
+              type="password"
+              class="password-form-input"
+              [class.error]="passwordForm.get('newPassword')!.invalid && passwordForm.get('newPassword')!.touched"
+              formControlName="newPassword"
+              placeholder="請輸入新密碼（至少 4 個字元）"
+              autocomplete="new-password"
+            />
+            @if (passwordForm.get('newPassword')!.invalid && passwordForm.get('newPassword')!.touched) {
+              <div class="password-form-error">
+                @if (passwordForm.get('newPassword')!.errors?.['required']) {
+                  請輸入新密碼
+                } @else if (passwordForm.get('newPassword')!.errors?.['minlength']) {
+                  密碼至少需要 4 個字元
+                }
+              </div>
+            }
+          </div>
+          <div class="password-form-group">
+            <label class="password-form-label">確認密碼 <span class="required">*</span></label>
+            <input
+              type="password"
+              class="password-form-input"
+              [class.error]="passwordForm.get('confirmPassword')!.invalid && passwordForm.get('confirmPassword')!.touched"
+              formControlName="confirmPassword"
+              placeholder="請再次輸入密碼"
+              autocomplete="new-password"
+            />
+            @if (passwordForm.get('confirmPassword')!.invalid && passwordForm.get('confirmPassword')!.touched) {
+              <div class="password-form-error">
+                @if (passwordForm.get('confirmPassword')!.errors?.['required']) {
+                  請確認密碼
+                } @else if (passwordForm.get('confirmPassword')!.errors?.['mismatch']) {
+                  兩次輸入的密碼不一致
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-ghost" (click)="closePasswordDialog()" [disabled]="saving()">
+          取消
+        </button>
+        <button class="btn-warning" (click)="confirmPasswordChange()" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-warning"></span>
+            儲存中...
+          } @else {
+            確認變更
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirm Dialog -->
+@if (deleteDialog().open) {
+  <div class="modal-overlay" (click)="closeDeleteDialog()">
+    <div class="confirm-dialog" (click)="$event.stopPropagation()">
+
+      <!-- Neon line (red for danger) -->
+      <div class="confirm-neon-line"></div>
+
+      <div class="confirm-body">
+        <!-- Icon -->
+        <div class="confirm-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </div>
+
+        <h3 class="confirm-title">刪除使用者</h3>
+        <p class="confirm-message">
+          確定要刪除「<strong>{{ deleteDialog().userName }}</strong>」嗎？<br>
+          此操作無法復原。
+        </p>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-ghost" (click)="closeDeleteDialog()" [disabled]="loading()">
+          取消
+        </button>
+        <button class="btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            刪除中...
+          } @else {
+            確認刪除
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

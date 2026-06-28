@@ -1,0 +1,227 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <button class="btn-back" (click)="onCancel()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <div class="page-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        @if (isEditMode()) {
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        } @else {
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+        }
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">{{ pageTitle() }}</h1>
+      <p class="page-subtitle">{{ isEditMode() ? '修改客戶基本資料與聯絡人' : '填寫客戶基本資料與聯絡人' }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <div class="panel">
+    <div class="form-skeleton">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="skeleton-field">
+          <div class="skeleton-label"></div>
+          <div class="skeleton-input"></div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+
+<!-- Form Panel -->
+<form [formGroup]="form" (ngSubmit)="onSave()">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">基本資料</h2>
+    </div>
+    <div class="panel-body">
+      <div class="form-grid">
+
+        <!-- 客戶名稱 (full width) -->
+        <div class="form-group full-width">
+          <label class="form-label">
+            客戶名稱
+            <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-input"
+            [class.error]="nameInvalid"
+            formControlName="name"
+            placeholder="請輸入客戶名稱"
+            autocomplete="off"
+          />
+          @if (nameInvalid) {
+            <div class="form-error">
+              @if (nameControl.errors?.['required']) {
+                請輸入客戶名稱
+              } @else if (nameControl.errors?.['maxlength']) {
+                客戶名稱不可超過 200 個字元
+              }
+            </div>
+          }
+        </div>
+
+        <!-- 客戶分類 -->
+        <div class="form-group">
+          <label class="form-label">客戶分類</label>
+          <select class="form-select" formControlName="customerTypeId">
+            <option [ngValue]="null">未分類</option>
+            @for (type of customerTypes(); track type.customerTypeId) {
+              <option [ngValue]="type.customerTypeId">{{ type.title }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- 國家 -->
+        <div class="form-group">
+          <label class="form-label">國家</label>
+          <select class="form-select" formControlName="countryId">
+            <option [ngValue]="null">請選擇</option>
+            @for (country of countries(); track country.id) {
+              <option [ngValue]="country.id">{{ country.title }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- 地址 (full width) -->
+        <div class="form-group full-width">
+          <label class="form-label">地址</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="address"
+            placeholder="請輸入地址"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- 電話 -->
+        <div class="form-group">
+          <label class="form-label">電話</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="phone"
+            placeholder="請輸入電話"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- 傳真 -->
+        <div class="form-group">
+          <label class="form-label">傳真</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="fax"
+            placeholder="請輸入傳真"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- 統一編號 -->
+        <div class="form-group">
+          <label class="form-label">統一編號</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="vatNumber"
+            placeholder="請輸入統一編號"
+            autocomplete="off"
+          />
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Contacts Panel -->
+  <div class="panel contacts-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">聯絡人</h2>
+      <button type="button" class="btn-add-contact" (click)="addContact()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        新增聯絡人
+      </button>
+    </div>
+    <div class="panel-body">
+      @if (contacts.length === 0) {
+        <div class="contacts-empty">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+          <p>尚未新增聯絡人</p>
+        </div>
+      }
+
+      <div formArrayName="contacts">
+        @for (contact of contacts.controls; track $index; let i = $index) {
+          <div class="contact-card" [formGroupName]="i">
+            <div class="contact-header">
+              <span class="contact-index">聯絡人 {{ i + 1 }}</span>
+              <button type="button" class="btn-remove-contact" (click)="removeContact(i)" title="移除聯絡人">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="contact-fields">
+              <div class="contact-field">
+                <label class="form-label-sm">姓名</label>
+                <input type="text" class="form-input-sm" formControlName="name" placeholder="姓名" autocomplete="off" />
+              </div>
+              <div class="contact-field">
+                <label class="form-label-sm">Email</label>
+                <input type="email" class="form-input-sm" formControlName="email" placeholder="email@example.com" autocomplete="off" />
+              </div>
+              <div class="contact-field">
+                <label class="form-label-sm">電話</label>
+                <input type="text" class="form-input-sm" formControlName="phone" placeholder="電話" autocomplete="off" />
+              </div>
+              <div class="contact-field contact-field-ext">
+                <label class="form-label-sm">分機</label>
+                <input type="text" class="form-input-sm" formControlName="ext" placeholder="分機" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button type="button" class="btn-ghost" (click)="onCancel()" [disabled]="saving()">
+      取消
+    </button>
+    <button type="submit" class="btn-primary" [disabled]="saving()">
+      @if (saving()) {
+        <span class="spinner"></span>
+        儲存中...
+      } @else {
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        儲存
+      }
+    </button>
+  </div>
+</form>
+
+}

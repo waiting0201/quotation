@@ -1,0 +1,31 @@
+<div
+  class="flex items-center px-6 text-sm"
+  style="
+    height: var(--ribbon-height);
+    background: #252526;
+    border-bottom: 1px solid #3C3C3C;
+  "
+>
+  @if (breadcrumbs().length === 0) {
+    <span style="color: #969696;">首頁</span>
+  } @else {
+    @for (crumb of breadcrumbs(); track crumb.label; let last = $last) {
+      @if (!last) {
+        <a
+          [routerLink]="crumb.route"
+          class="breadcrumb-link"
+        >{{ crumb.label }}</a>
+        <span
+          class="mx-2 text-xs shrink-0"
+          style="color: #636363;"
+          aria-hidden="true"
+        >/</span>
+      } @else {
+        <span
+          class="font-medium"
+          style="color: #CCCCCC;"
+        >{{ crumb.label }}</span>
+      }
+    }
+  }
+</div>

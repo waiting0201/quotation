@@ -1,0 +1,201 @@
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <button class="btn-back" (click)="onCancel()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <div class="page-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="page-title">新增入帳</h1>
+      <p class="page-subtitle">填寫入帳資料</p>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <div class="panel">
+    <div class="form-skeleton">
+      @for (_ of [1,2,3,4,5]; track $index) {
+        <div class="skeleton-field">
+          <div class="skeleton-label"></div>
+          <div class="skeleton-input"></div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+
+<!-- Form Panel -->
+<form [formGroup]="form" (ngSubmit)="onSave()">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">入帳資料</h2>
+    </div>
+    <div class="panel-body">
+      <div class="form-grid">
+
+        <!-- 客戶 — searchable dropdown -->
+        <div class="form-group">
+          <label class="form-label">
+            客戶選擇
+            <span class="required">*</span>
+          </label>
+          <div class="customer-dropdown" [class.error]="customerIdInvalid">
+            <div class="customer-search-wrap" [class.has-value]="!!selectedCustomerName()">
+              <svg class="customer-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                class="customer-search-input"
+                placeholder="搜尋客戶名稱或編號..."
+                [value]="customerDropdownOpen() ? customerSearch() : selectedCustomerName()"
+                (input)="onCustomerSearchInput($any($event.target).value)"
+                (focus)="onCustomerSearchFocus()"
+                autocomplete="off"
+              />
+              @if (selectedCustomerName()) {
+                <button type="button" class="customer-clear-btn" (click)="clearCustomer()" title="清除">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              }
+            </div>
+
+            <!-- 下拉面板 -->
+            @if (customerDropdownOpen()) {
+              <div class="customer-dropdown-panel">
+                @if (filteredCustomers().length === 0) {
+                  <div class="customer-dropdown-empty">找不到符合的客戶</div>
+                } @else {
+                  @for (c of filteredCustomers(); track c.customerId) {
+                    <button
+                      type="button"
+                      class="customer-dropdown-item"
+                      (mousedown)="selectCustomer(c)"
+                    >
+                      <span class="customer-item-name">{{ c.name }}</span>
+                      <span class="customer-item-code">{{ c.code }}</span>
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+          @if (customerIdInvalid) {
+            <div class="form-error">請選擇客戶</div>
+          }
+        </div>
+
+        <!-- 請款單核銷勾選（選了客戶後出現） -->
+        @if (form.get('customerId')!.value) {
+          <div class="form-group full-width">
+            <label class="form-label">核銷請款單</label>
+
+            @if (loadingInvoices()) {
+              <div class="invoice-select-hint">載入請款單中...</div>
+            } @else if (invoices().length === 0) {
+              <div class="invoice-select-hint">此客戶目前沒有可核銷的請款單</div>
+            } @else {
+              <div class="invoice-select-list">
+                @for (inv of invoices(); track inv.invoiceId) {
+                  <label class="invoice-select-item" [class.selected]="isInvoiceSelected(inv.invoiceId)">
+                    <input
+                      type="checkbox"
+                      [checked]="isInvoiceSelected(inv.invoiceId)"
+                      (change)="toggleInvoice(inv.invoiceId)"
+                    />
+                    <span class="invoice-code">{{ inv.invoiceCode }}</span>
+                    <span class="invoice-status">{{ invoiceStatusLabel(inv.status) }}</span>
+                    <span class="invoice-date">{{ inv.requestDate ? (inv.requestDate | date: 'yyyy-MM-dd') : '—' }}</span>
+                    <span class="invoice-total">NT$ {{ (inv.total ?? 0) | number }}</span>
+                  </label>
+                }
+              </div>
+              <div class="invoice-select-summary">
+                已選 {{ selectedInvoiceIds().size }} 筆，合計
+                <strong>NT$ {{ selectedInvoiceTotal() | number }}</strong>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 入帳日期 -->
+        <div class="form-group">
+          <label class="form-label">入帳日期</label>
+          <input
+            type="date"
+            class="form-input"
+            formControlName="incomeDate"
+          />
+        </div>
+
+        <!-- 實收金額 -->
+        <div class="form-group">
+          <label class="form-label">實收金額</label>
+          <input
+            type="number"
+            class="form-input"
+            formControlName="amount"
+            placeholder="請輸入金額"
+            min="0"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- 扣除額 -->
+        <div class="form-group">
+          <label class="form-label">扣除額</label>
+          <input
+            type="number"
+            class="form-input"
+            formControlName="fee"
+            placeholder="請輸入扣除額"
+            min="0"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- 備註 (full width) -->
+        <div class="form-group full-width">
+          <label class="form-label">備註</label>
+          <textarea
+            class="form-textarea"
+            formControlName="remark"
+            placeholder="請輸入備註"
+            rows="3"
+          ></textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button type="button" class="btn-ghost" (click)="onCancel()" [disabled]="saving()">
+      取消
+    </button>
+    <button type="submit" class="btn-primary" [disabled]="saving()">
+      @if (saving()) {
+        <span class="spinner"></span>
+        儲存中...
+      } @else {
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        儲存
+      }
+    </button>
+  </div>
+</form>
+
+}

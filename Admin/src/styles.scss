@@ -1,0 +1,430 @@
+@use "tailwindcss";
+
+@theme {
+  /* ============================================
+     背景層次 (Background Layers)
+     參考 VS Code Dark 主題：中性灰底色，護眼易讀
+  ============================================ */
+  --color-bg-base:       #1E1E1E;
+  --color-bg-app:        #1E1E1E;
+  --color-bg-surface:    #252526;
+  --color-bg-elevated:   #2D2D2D;
+  --color-bg-highlight:  #383838;
+
+  /* ============================================
+     主色 — Cyber Blue
+  ============================================ */
+  --color-cyber-50:   #E0F6FF;
+  --color-cyber-100:  #B8EEFF;
+  --color-cyber-200:  #7DDCFF;
+  --color-cyber-300:  #4BC9FF;
+  --color-cyber-400:  #00B8F0;
+  --color-cyber-500:  #00A3D4;
+  --color-cyber-600:  #0088B3;
+  --color-cyber-700:  #006E92;
+  --color-cyber-800:  #004F6B;
+  --color-cyber-900:  #002F40;
+
+  /* 霓虹發光色 */
+  --color-neon-blue:   #00D4FF;
+  --color-neon-cyan:   #06FFF4;
+  --color-neon-green:  #10FFB0;
+  --color-neon-amber:  #FFB300;
+  --color-neon-violet: #A78BFA;
+  --color-neon-red:    #FF4466;
+
+  /* ============================================
+     輔助色 (Accent)
+  ============================================ */
+  --color-accent-cyan:    #06FFF4;
+  --color-accent-violet:  #8B5CF6;
+  --color-accent-emerald: #10FFB0;
+  --color-accent-amber:   #FFB300;
+  --color-accent-red:     #FF4466;
+
+  /* ============================================
+     狀態色 (Status)
+  ============================================ */
+  /* 已報價 */
+  --color-status-quoted:            #38BDF8;
+  --color-status-quoted-bg:         rgba(56, 189, 248, 0.12);
+  --color-status-quoted-border:     rgba(56, 189, 248, 0.35);
+  /* 已簽約 */
+  --color-status-contracted:        #60A5FA;
+  --color-status-contracted-bg:     rgba(96, 165, 250, 0.12);
+  --color-status-contracted-border: rgba(96, 165, 250, 0.35);
+  /* 已結案 */
+  --color-status-closed:            #10FFB0;
+  --color-status-closed-bg:         rgba(16, 255, 176, 0.10);
+  --color-status-closed-border:     rgba(16, 255, 176, 0.30);
+  /* 已取消 */
+  --color-status-cancelled:         #F87171;
+  --color-status-cancelled-bg:      rgba(248, 113, 113, 0.10);
+  --color-status-cancelled-border:  rgba(248, 113, 113, 0.30);
+
+  /* 稅金類型色 */
+  --color-tax-exclusive:  #38BDF8;
+  --color-tax-inclusive:  #C084FC;
+  --color-tax-exempt:     #FCD34D;
+
+  /* ============================================
+     語意色 (Semantic)
+  ============================================ */
+  --color-success:        #10FFB0;
+  --color-success-bg:     rgba(16, 255, 176, 0.10);
+  --color-warning:        #FFB300;
+  --color-warning-bg:     rgba(255, 179, 0, 0.10);
+  --color-danger:         #FF4466;
+  --color-danger-bg:      rgba(255, 68, 102, 0.10);
+  --color-info:           #00D4FF;
+  --color-info-bg:        rgba(0, 212, 255, 0.10);
+
+  /* ============================================
+     文字色 (Text)
+     參考 VS Code Dark：中性灰白文字，高對比清晰
+  ============================================ */
+  --color-text-primary:   #D4D4D4;
+  --color-text-secondary: #CCCCCC;
+  --color-text-muted:     #969696;
+  --color-text-disabled:  #636363;
+  --color-text-inverse:   #1E1E1E;
+  --color-text-neon:      #3DC9F6;
+
+  /* ============================================
+     邊框色 (Border)
+     參考 VS Code Dark：中性灰邊框，清楚分隔
+  ============================================ */
+  --color-border-subtle:  #3C3C3C;
+  --color-border-default: #474747;
+  --color-border-strong:  #606060;
+  --color-border-active:  #007FD4;
+  --color-border-glow:    #3DC9F6;
+
+  /* ============================================
+     Sidebar 專用
+  ============================================ */
+  --color-sidebar-bg:           #252526;
+  --color-sidebar-surface:      #2D2D2D;
+  --color-sidebar-active:       #37373D;
+  --color-sidebar-border:       #3C3C3C;
+  --color-sidebar-text:         #CCCCCC;
+  --color-sidebar-text-active:  #FFFFFF;
+  --color-sidebar-icon:         #969696;
+  --color-sidebar-icon-active:  #3DC9F6;
+
+  /* ============================================
+     字體 (Typography)
+  ============================================ */
+  --font-sans:    "Noto Sans TC", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "Fira Code", monospace;
+  --font-display: "Noto Sans TC", system-ui, sans-serif;
+
+  /* 字體尺寸 */
+  --text-2xs: 12px;
+  --text-2xs--line-height: 16px;
+  --text-xs:  13px;
+  --text-xs--line-height: 18px;
+  --text-sm:  14px;
+  --text-sm--line-height: 20px;
+  --text-base: 15px;
+  --text-base--line-height: 22px;
+  --text-md:  16px;
+  --text-md--line-height: 24px;
+  --text-lg:  17px;
+  --text-lg--line-height: 26px;
+  --text-xl:  19px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 22px;
+  --text-2xl--line-height: 30px;
+  --text-3xl: 26px;
+  --text-3xl--line-height: 34px;
+  --text-4xl: 32px;
+  --text-4xl--line-height: 38px;
+  --text-5xl: 38px;
+  --text-5xl--line-height: 44px;
+
+  /* ============================================
+     版型尺寸 (Layout Dimensions)
+  ============================================ */
+  --spacing-sidebar:      260px;
+  --spacing-sidebar-mini: 60px;
+  --spacing-header:       60px;
+  --spacing-ribbon:       40px;
+
+  /* ============================================
+     圓角 (Border Radius)
+  ============================================ */
+  --radius-sm:    4px;
+  --radius-btn:   6px;
+  --radius-input: 6px;
+  --radius-panel: 10px;
+  --radius-modal: 14px;
+  --radius-full:  9999px;
+
+  /* ============================================
+     陰影與發光 (Shadows & Glow)
+  ============================================ */
+  --shadow-panel:
+    0 0 0 1px #3C3C3C,
+    0 4px 16px rgba(0, 0, 0, 0.3);
+
+  --shadow-header:
+    0 1px 0 #3C3C3C;
+
+  --shadow-modal:
+    0 0 0 1px #474747,
+    0 16px 48px rgba(0, 0, 0, 0.5);
+
+  --shadow-dropdown:
+    0 0 0 1px #474747,
+    0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --shadow-btn-primary:
+    0 2px 8px rgba(0, 0, 0, 0.3);
+
+  --shadow-btn-primary-hover:
+    0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --shadow-input-focus:
+    0 0 0 2px rgba(0, 127, 212, 0.30);
+
+  --shadow-stat-blue:   0 0 30px rgba(0, 212, 255, 0.15), 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-stat-cyan:   0 0 30px rgba(6, 255, 244, 0.12), 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-stat-green:  0 0 30px rgba(16, 255, 176, 0.12), 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-stat-violet: 0 0 30px rgba(139, 92, 246, 0.15), 0 8px 32px rgba(0,0,0,0.4);
+
+  /* ============================================
+     Z-Index
+  ============================================ */
+  --z-sidebar:  40;
+  --z-header:   50;
+  --z-dropdown: 60;
+  --z-modal:    70;
+  --z-toast:    80;
+
+  /* ============================================
+     動畫時間 (Animation Durations)
+  ============================================ */
+  --duration-instant: 100ms;
+  --duration-fast:    150ms;
+  --duration-normal:  200ms;
+  --duration-slow:    300ms;
+  --duration-glacial: 500ms;
+}
+
+/* ============================================
+   CSS Variables (for JS binding)
+============================================ */
+:root {
+  --sidebar-width:      260px;
+  --sidebar-mini-width: 60px;
+  --header-height:      60px;
+  --ribbon-height:      40px;
+  --content-padding:    24px;
+  --transition-sidebar: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   全域 Base 樣式 (深色主題)
+============================================ */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #D4D4D4;
+  background-color: #1E1E1E;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Scrollbar 深色樣式
+============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1E1E1E;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5A5A5A;
+  border-radius: 3px;
+
+  &:hover {
+    background: #787878;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #5A5A5A #1E1E1E;
+}
+
+/* ============================================
+   主版型 Layout
+============================================ */
+.app-layout {
+  padding-left: var(--sidebar-width);
+  padding-top: var(--header-height);
+  min-height: 100vh;
+  background-color: #1E1E1E;
+  transition: padding-left var(--transition-sidebar);
+
+  &.sidebar-mini {
+    padding-left: var(--sidebar-mini-width);
+  }
+
+  &.sidebar-hidden {
+    padding-left: 0;
+  }
+}
+
+/* ============================================
+   關鍵 Keyframes
+============================================ */
+
+/* 霓虹邊框脈動 */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.3), 0 0 10px rgba(0, 212, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.6), 0 0 30px rgba(0, 212, 255, 0.4);
+  }
+}
+
+/* 背景網格移動 (Login 頁) */
+@keyframes grid-scroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
+/* 掃描線效果 (Login 頁) */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* 元素從下方淡入 (頁面進場) */
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 從右側滑入 (Toast) */
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 骨架載入閃爍 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 緩慢旋轉 */
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   全域表單元素樣式（高對比度）
+   確保 input / select / textarea / checkbox
+   在深色背景上清楚可見
+============================================ */
+
+/* Input / Textarea 基底 */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+textarea,
+select {
+  background-color: #3C3C3C;
+  color: #D4D4D4;
+  border: 1px solid #5A5A5A;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &::placeholder {
+    color: #808080;
+  }
+
+  &:focus {
+    border-color: #007FD4;
+    box-shadow: 0 0 0 2px rgba(0, 127, 212, 0.30);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Select 下拉箭頭 */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23CCCCCC' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Checkbox / Radio 原生覆蓋（讓未自訂的也清楚可見） */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #3DC9F6;
+  width: 16px;
+  height: 16px;
+}
+
+/* Label 文字 */
+label {
+  color: #CCCCCC;
+}

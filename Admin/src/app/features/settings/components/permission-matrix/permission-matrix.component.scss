@@ -1,0 +1,206 @@
+// ─── Permission Matrix Container ────────────────────────────────────────────
+.permission-matrix {
+  border: 1px solid #474747;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+// ─── Header row ─────────────────────────────────────────────────────────────
+.perm-matrix-header {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, 72px);
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.30);
+  border-bottom: 1px solid #3C3C3C;
+
+  .col-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #969696;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .col-perm {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #969696;
+    letter-spacing: 0.04em;
+  }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+.perm-empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #969696;
+}
+
+// ─── Category block ──────────────────────────────────────────────────────────
+.perm-category {
+  border-bottom: 1px solid #383838;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ─── Category header row ─────────────────────────────────────────────────────
+.perm-category-header {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, 72px);
+  align-items: center;
+  padding: 10px 16px;
+  background: #303030;
+  cursor: pointer;
+  user-select: none;
+  transition: background 150ms;
+
+  &:hover {
+    background: #353535;
+  }
+
+  .col-perm {
+    text-align: center;
+  }
+}
+
+.perm-category-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #E0E0E0;
+}
+
+// ─── Expand icon ─────────────────────────────────────────────────────────────
+.expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #969696;
+  transition: transform 150ms;
+  flex-shrink: 0;
+
+  &.expanded {
+    transform: rotate(90deg);
+  }
+}
+
+.cat-name {
+  color: #E0E0E0;
+}
+
+// ─── Sub-item rows ───────────────────────────────────────────────────────────
+.perm-items {
+  overflow: hidden;
+}
+
+.perm-item {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, 72px);
+  align-items: center;
+  padding: 8px 16px 8px 44px;
+  border-top: 1px solid #333333;
+  transition: background 150ms;
+
+  &:hover {
+    background: #2D2D2D;
+  }
+
+  .col-perm {
+    text-align: center;
+  }
+}
+
+.perm-item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #CCCCCC;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #636363;
+  flex-shrink: 0;
+}
+
+// ─── Checkbox wrapper & custom checkbox ──────────────────────────────────────
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-checkbox {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  display: block;
+
+  input[type='checkbox'] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 1;
+    margin: 0;
+  }
+
+  .checkmark {
+    position: absolute;
+    inset: 0;
+    background: #3C3C3C;
+    border: 1.5px solid #5A5A5A;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms;
+
+    svg {
+      opacity: 0;
+      transform: scale(0.6);
+      transition: all 150ms;
+      color: #080E1C;
+    }
+  }
+
+  // Checked state
+  input:checked + .checkmark {
+    background: #00D4FF;
+    border-color: #00D4FF;
+    box-shadow: 0 0 6px rgba(0, 127, 212, 0.50);
+
+    svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  // Indeterminate state (partial category selection)
+  input.indeterminate + .checkmark {
+    background: rgba(0, 212, 255, 0.40);
+    border-color: #00D4FF;
+
+    svg {
+      opacity: 1;
+      transform: scale(1);
+      color: #FFFFFF;
+    }
+  }
+
+  &:hover .checkmark {
+    border-color: #007FD4;
+  }
+}
