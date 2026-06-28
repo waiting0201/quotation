@@ -341,7 +341,7 @@
 
 .td-num     { color: #484848; font-size: 12px; }
 .td-title   { font-weight: 500; color: #D0D0D0; }
-.td-desc    { color: #686868; }
+.td-desc    { color: #686868; white-space: pre-line; }
 .td-right   { text-align: right; }
 .td-money   { text-align: right; font-variant-numeric: tabular-nums; }
 .td-subtotal { font-weight: 600; color: #E0E0E0; }
