@@ -35,8 +35,10 @@ function getTodayString(): string {
 /** 稅務計算：taxType 0=稅外加, 1=稅內含, 2=免稅 */
 function calcTax(pretaxTotal: number, taxType: number): { tax: number; grandTotal: number } {
   switch (taxType) {
-    case 0: // 稅外加：total * 1.05
-      return { tax: Math.round(pretaxTotal * 0.05), grandTotal: Math.round(pretaxTotal * 1.05) };
+    case 0: { // 稅外加：total = 未稅 + 稅（分開捨入，與後端 subtotal + round(subtotal * 0.05) 一致）
+      const tax = Math.round(pretaxTotal * 0.05);
+      return { tax, grandTotal: pretaxTotal + tax };
+    }
     case 1: // 稅內含：已含稅，反推稅額
       return {
         tax: Math.round(pretaxTotal - pretaxTotal / 1.05),
@@ -106,7 +108,10 @@ export class QuotationFormComponent implements OnInit {
   // ─── 即時金額計算 — 用手動 signal 同步（不可用 computed() 追蹤 FormControl.value）
   // 每次 form 異動後手動呼叫 _recalcTotals()
   readonly detailsSubtotal = signal(0);
-  readonly pretaxTotal = computed(() => this.detailsSubtotal());
+  readonly discountPercent = signal(0);
+  readonly discountAmount = signal(0);
+  /** 折後小計（未稅） */
+  readonly pretaxTotal = computed(() => this.detailsSubtotal() - this.discountAmount());
   readonly taxAmount = signal(0);
   readonly grandTotal = signal(0);
 
@@ -123,6 +128,7 @@ export class QuotationFormComponent implements OnInit {
       quotationDate: [today, Validators.required],
       expireDate: [null as string | null, Validators.required],
       taxType: [0],
+      discount: [0, [Validators.min(0), Validators.max(100), Validators.pattern(/^\d+$/)]],
       workdays: [null as number | null],
       status: [0],
       payment: ['', Validators.required],
@@ -130,8 +136,11 @@ export class QuotationFormComponent implements OnInit {
       details: this.fb.array([]),
     });
 
-    // 監聽 taxType 變動即時重算
+    // 監聽 taxType / discount 變動即時重算
     this.form.get('taxType')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._recalcTotals());
+    this.form.get('discount')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this._recalcTotals());
 
@@ -181,14 +190,21 @@ export class QuotationFormComponent implements OnInit {
 
   // ─── 重算總金額 ───────────────────────────────────────────────────────────
   private _recalcTotals(): void {
+    // 與後端一致：小計 = Σ(數量 × 單價)
     const detailsSum = this.details.controls.reduce((sum, ctrl) => {
-      return sum + (Number(ctrl.get('price')?.value) || 0);
+      const qty = Number(ctrl.get('quantity')?.value) || 1;
+      const price = Number(ctrl.get('price')?.value) || 0;
+      return sum + qty * price;
     }, 0);
 
+    const discount = Math.min(100, Math.max(0, Math.trunc(Number(this.form.get('discount')?.value) || 0)));
+    const discountAmount = Math.round(detailsSum * discount / 100);
     const taxType = Number(this.form.get('taxType')?.value ?? 0);
-    const { tax, grandTotal } = calcTax(detailsSum, taxType);
+    const { tax, grandTotal } = calcTax(detailsSum - discountAmount, taxType);
 
     this.detailsSubtotal.set(detailsSum);
+    this.discountPercent.set(discount);
+    this.discountAmount.set(discountAmount);
     this.taxAmount.set(tax);
     this.grandTotal.set(grandTotal);
   }
@@ -288,6 +304,7 @@ export class QuotationFormComponent implements OnInit {
             quotationDate: q.quotationDate ? q.quotationDate.substring(0, 10) : getTodayString(),
             expireDate: q.expireDate ? q.expireDate.substring(0, 10) : null,
             taxType: q.taxType ?? 0,
+            discount: q.discount ?? 0,
             workdays: q.workdays ?? null,
             status: q.status ?? 0,
             payment: q.payment ?? '',
@@ -375,6 +392,7 @@ export class QuotationFormComponent implements OnInit {
       quotationDate: v.quotationDate || getTodayString(),
       expireDate: v.expireDate || null,
       taxType: Number(v.taxType ?? 0),
+      discount: Math.min(100, Math.max(0, Math.trunc(Number(v.discount) || 0))),
       payment: v.payment?.trim() || '',
       remark: v.remark?.trim() || '',
       workdays: v.workdays !== null && v.workdays !== '' ? Number(v.workdays) : null,
@@ -443,6 +461,11 @@ export class QuotationFormComponent implements OnInit {
 
   get paymentInvalid(): boolean {
     const ctrl = this.form.get('payment')!;
+    return ctrl.invalid && ctrl.touched;
+  }
+
+  get discountInvalid(): boolean {
+    const ctrl = this.form.get('discount')!;
     return ctrl.invalid && ctrl.touched;
   }
 

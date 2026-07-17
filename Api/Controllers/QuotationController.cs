@@ -170,6 +170,9 @@ public class QuotationController
         if (dto.TaxType.HasValue && dto.TaxType is < 0 or > 2)
             return "稅別值無效，允許範圍：0=稅外加, 1=稅內含, 2=免稅。";
 
+        if (dto.Discount.HasValue && dto.Discount is < 0 or > 100)
+            return "折扣百分比無效，允許範圍：0-100 整數。";
+
         if (dto.Status.HasValue && dto.Status is < 0 or > 3)
             return "報價單狀態值無效，允許範圍：0=已報價, 1=已簽約, 2=已結案, 3=已取消。";
 

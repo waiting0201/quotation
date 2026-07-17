@@ -393,6 +393,9 @@ public partial class QuotationDbContext : DbContext
             entity.Property(e => e.Deadline)
                 .HasColumnType("datetime")
                 .HasColumnName("deadline");
+            entity.Property(e => e.Discount)
+                .HasDefaultValue(0)
+                .HasColumnName("discount");
             entity.Property(e => e.Enname)
                 .HasMaxLength(80)
                 .HasColumnName("enname");

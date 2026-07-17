@@ -203,6 +203,16 @@
     </div>
     <div class="summary-body">
       <div class="summary-block">
+        @if (q.discount > 0) {
+          <div class="summary-row">
+            <span class="summary-label">小計</span>
+            <span class="summary-value">{{ formatAmount(rawSubtotal()) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">折扣 {{ q.discount }}%</span>
+            <span class="summary-value">-{{ formatAmount(discountAmount()) }}</span>
+          </div>
+        }
         <div class="summary-row">
           <span class="summary-label">未稅合計</span>
           <span class="summary-value">{{ formatAmount(pretaxTotal()) }}</span>

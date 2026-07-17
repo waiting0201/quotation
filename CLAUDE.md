@@ -73,7 +73,8 @@ azurite --silent --location .azurite
 
 - **Engine:** SQL Server（本機）
 - **Database:** `quotation`
-- **連線:** 沿用現有 schema，不修改資料表結構
+- **連線:** 沿用現有 schema，原則上不修改資料表結構
+- **例外（經同意的 schema 變更）:** `items.discount`（int NULL DEFAULT 0，報價單折扣百分比 0-100），migration 見 `docs/migrations/`
 
 ## Angular 企業級架構
 
@@ -532,6 +533,8 @@ GET    /api/lookups/permissions        # 權限樹
 | 稅內含 | 1 | total / 1.05（反推未稅） |
 | 免稅金 | 2 | total（不加稅） |
 
+**折扣（報價單層級）：** `items.discount` 存 0-100 整數百分比。計算順序：未稅小計 → 扣除 `round(小計 × discount / 100)` → 折後小計再依稅別計稅；`items.tax` / `items.total` 存的是折後值。
+
 ### 狀態流程
 
 **報價單：** 已報價(0) → 已簽約(1) → 已結案(2) → 已取消(3)
@@ -547,7 +550,7 @@ GET    /api/lookups/permissions        # 權限樹
 
 ## 資料庫 Schema
 
-沿用現有資料表，不修改結構。
+沿用現有資料表，原則上不修改結構。例外：`items.discount`（2026-07 新增，折扣百分比），migration 存放於 `docs/migrations/`。
 
 ### 核心業務資料表
 

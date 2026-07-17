@@ -198,6 +198,24 @@
           </select>
         </div>
 
+        <!-- 折扣 -->
+        <div class="form-group">
+          <label class="form-label">折扣 (%)</label>
+          <input
+            type="number"
+            class="form-input"
+            [class.error]="discountInvalid"
+            formControlName="discount"
+            placeholder="0"
+            min="0"
+            max="100"
+            step="1"
+          />
+          @if (discountInvalid) {
+            <div class="form-error">折扣需為 0-100 的整數</div>
+          }
+        </div>
+
         <!-- 工作天 -->
         <div class="form-group">
           <label class="form-label">工作天</label>
@@ -362,8 +380,20 @@
 
         <div class="total-row">
           <span class="total-label">未稅合計</span>
-          <span class="total-value">NT$ {{ formatCurrency(pretaxTotal()) }}</span>
+          <span class="total-value">NT$ {{ formatCurrency(detailsSubtotal()) }}</span>
         </div>
+
+        @if (discountPercent() > 0) {
+          <div class="total-row">
+            <span class="total-label">折扣 {{ discountPercent() }}%</span>
+            <span class="total-value">-NT$ {{ formatCurrency(discountAmount()) }}</span>
+          </div>
+
+          <div class="total-row">
+            <span class="total-label">折後合計</span>
+            <span class="total-value">NT$ {{ formatCurrency(pretaxTotal()) }}</span>
+          </div>
+        }
 
         <div class="total-row">
           <span class="total-label">稅額</span>

@@ -46,6 +46,11 @@ public partial class Item
 
     public short? Taxtype { get; set; }
 
+    /// <summary>
+    /// 折扣百分比（0-100 整數，0=無折扣）；套用在未稅小計上，打折後再依 taxtype 計稅
+    /// </summary>
+    public int? Discount { get; set; }
+
     public int? Tax { get; set; }
 
     public int? Total { get; set; }

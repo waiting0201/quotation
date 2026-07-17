@@ -23,6 +23,10 @@ export interface QuotationDetailResponse {
   quotationDate: string;
   expireDate: string | null;
   taxType: number;
+  /** 折扣百分比（0-100 整數，0=無折扣） */
+  discount: number;
+  /** 折扣金額 = round(未稅小計 × discount / 100)，由後端計算 */
+  discountAmount: number;
   tax: number;
   total: number;
   payment: string;
@@ -62,6 +66,8 @@ export interface QuotationCreateUpdateDto {
   quotationDate: string;
   expireDate: string | null;
   taxType: number;
+  /** 折扣百分比（0-100 整數，0=無折扣） */
+  discount: number;
   payment: string;
   remark: string;
   workdays: number | null;

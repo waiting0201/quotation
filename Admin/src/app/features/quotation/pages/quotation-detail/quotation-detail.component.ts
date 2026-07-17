@@ -46,6 +46,20 @@ export class QuotationDetailComponent implements OnInit {
     (this.quotation()?.details ?? []).reduce((sum, d) => sum + d.total, 0)
   );
 
+  /** 折前未稅小計 = 明細 + 內容加總 */
+  readonly rawSubtotal = computed(() => {
+    const q = this.quotation();
+    if (!q) return 0;
+    return (
+      (q.details ?? []).reduce((sum, d) => sum + d.total, 0) +
+      (q.contents ?? []).reduce((sum, c) => sum + c.price, 0)
+    );
+  });
+
+  /** 折扣金額（後端計算） */
+  readonly discountAmount = computed(() => this.quotation()?.discountAmount ?? 0);
+
+  /** 折後未稅合計（total/tax 已是折後值，反推即為折後未稅） */
   readonly pretaxTotal = computed(() => {
     const q = this.quotation();
     if (!q) return 0;

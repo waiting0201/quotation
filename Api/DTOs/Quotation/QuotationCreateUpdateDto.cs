@@ -24,6 +24,9 @@ public class QuotationCreateUpdateDto
     /// <summary>稅別：0=稅外加, 1=稅內含, 2=免稅</summary>
     public short? TaxType { get; set; }
 
+    /// <summary>折扣百分比（0-100 整數，選填，預設 0=無折扣）</summary>
+    public int? Discount { get; set; }
+
     /// <summary>付款條件（選填）</summary>
     public string? Payment { get; set; }
 

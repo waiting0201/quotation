@@ -104,6 +104,7 @@ public class QuotationService
                 i.payment           AS Payment,
                 i.remark            AS Remark,
                 i.taxtype           AS TaxType,
+                i.discount          AS Discount,
                 i.tax               AS Tax,
                 i.total             AS Total,
                 i.workdays          AS Workdays,
@@ -153,6 +154,10 @@ public class QuotationService
         var contents = await _dapper.QueryAsync<QuotationContentItemDto>(contentSql, new { Id = id });
         item.Contents = contents.AsList();
 
+        // 折扣金額由後端統一計算，前端與 PDF 直接取用以確保三處一致
+        var rawSubtotal = item.Details.Sum(d => d.Total ?? 0) + item.Contents.Sum(c => c.Price ?? 0);
+        item.DiscountAmount = CalculateDiscountAmount(rawSubtotal, item.Discount ?? 0);
+
         return item;
     }
 
@@ -161,10 +166,10 @@ public class QuotationService
     /// <summary>
     /// 新增報價單。
     /// 自動產生 QUO{yyyyMMdd}{NNN} 編碼（依台北時區當日流水號遞增）。
-    /// 依 TaxType 計算稅額：
-    ///   0（稅外加）：subtotal = sum(qty*price) + sum(content.price)；tax = round(subtotal * 0.05)；total = subtotal + tax
-    ///   1（稅內含）：total = subtotal；tax = subtotal - round(subtotal / 1.05)
-    ///   2（免稅）  ：tax = 0；total = subtotal
+    /// 先對未稅小計套用折扣（discounted = subtotal - round(subtotal * discount / 100)），再依 TaxType 計算稅額：
+    ///   0（稅外加）：tax = round(discounted * 0.05)；total = discounted + tax
+    ///   1（稅內含）：total = discounted；tax = discounted - round(discounted / 1.05)
+    ///   2（免稅）  ：tax = 0；total = discounted
     /// </summary>
     public async Task<QuotationDetailDto> CreateAsync(QuotationCreateUpdateDto dto, Guid userId)
     {
@@ -182,6 +187,7 @@ public class QuotationService
             Quotationdate    = dto.QuotationDate,
             Expiredate       = dto.ExpireDate,
             Taxtype          = dto.TaxType ?? 0,
+            Discount         = Math.Clamp(dto.Discount ?? 0, 0, 100),
             Payment          = dto.Payment?.Trim(),
             Remark           = dto.Remark?.Trim(),
             Workdays         = dto.Workdays,
@@ -227,6 +233,7 @@ public class QuotationService
         item.Quotationdate    = dto.QuotationDate ?? item.Quotationdate;
         item.Expiredate       = dto.ExpireDate;
         item.Taxtype          = dto.TaxType ?? item.Taxtype;
+        item.Discount         = Math.Clamp(dto.Discount ?? 0, 0, 100);
         item.Payment          = dto.Payment?.Trim();
         item.Remark           = dto.Remark?.Trim();
         item.Workdays         = dto.Workdays;
@@ -298,11 +305,12 @@ public class QuotationService
     /// <summary>
     /// 計算報價單稅額與合計。
     /// subtotal = sum(detail.qty * detail.price) + sum(content.price)
+    /// discounted = subtotal - round(subtotal * discount / 100)（discount 為 0-100 整數百分比）
     ///
-    /// 稅別計算規則（依 taxtype）：
-    ///   0（稅外加）：tax = round(subtotal * 0.05)；total = subtotal + tax
-    ///   1（稅內含）：total = subtotal；tax = subtotal - round(subtotal / 1.05)（反推未稅部分的稅額）
-    ///   2（免稅）  ：tax = 0；total = subtotal
+    /// 稅別計算規則（依 taxtype，套用於折後小計）：
+    ///   0（稅外加）：tax = round(discounted * 0.05)；total = discounted + tax
+    ///   1（稅內含）：total = discounted；tax = discounted - round(discounted / 1.05)（反推未稅部分的稅額）
+    ///   2（免稅）  ：tax = 0；total = discounted
     /// </summary>
     private static (int Tax, int Total, int Subtotal) CalculateTotals(QuotationCreateUpdateDto dto)
     {
@@ -310,11 +318,23 @@ public class QuotationService
         var contentSubtotal = dto.Contents.Sum(c => c.Price ?? 0);
         var subtotal        = detailSubtotal + contentSubtotal;
 
+        var discounted = subtotal - CalculateDiscountAmount(subtotal, dto.Discount ?? 0);
+
         var taxType = dto.TaxType ?? 0;
-        var tax     = CalculateTax(subtotal, taxType);
-        var total   = taxType == 0 ? subtotal + tax : subtotal;
+        var tax     = CalculateTax(discounted, taxType);
+        var total   = taxType == 0 ? discounted + tax : discounted;
 
         return (tax, total, subtotal);
+    }
+
+    /// <summary>
+    /// 計算折扣金額 = round(subtotal * discount / 100)。
+    /// discount 超出 0-100 範圍時 clamp；捨入採 AwayFromZero 以對齊前端 JS 的 Math.round。
+    /// </summary>
+    private static int CalculateDiscountAmount(int subtotal, int discount)
+    {
+        var pct = Math.Clamp(discount, 0, 100);
+        return (int)Math.Round(subtotal * pct / 100.0, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

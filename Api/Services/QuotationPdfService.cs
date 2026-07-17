@@ -332,8 +332,11 @@ internal class QuotationPdfDocument : IDocument
     {
         var subtotal = _quotation.Details.Sum(d => d.Total ?? 0)
                      + _quotation.Contents.Sum(c => c.Price ?? 0);
+        var discount = _quotation.Discount ?? 0;
+        var discountAmount = _quotation.DiscountAmount ?? 0;  // 折扣金額由 QuotationService 計算，不在此重算
+        var discounted = subtotal - discountAmount;
         var taxTotal = _quotation.Tax ?? 0;
-        var grandTotal = _quotation.Total ?? (subtotal + taxTotal);
+        var grandTotal = _quotation.Total ?? (discounted + taxTotal);
         var taxType = _quotation.TaxType ?? 0;
 
         container.Table(table =>
@@ -378,12 +381,21 @@ internal class QuotationPdfDocument : IDocument
                 table.Cell().Element(TdCell).AlignRight().Text(Fmt(d.Total));
             }
 
-            // ── 合計區（依稅別顯示不同內容）
+            // ── 合計區（依稅別顯示不同內容；折扣為 0 時不顯示折扣相關列，版面與無折扣時相同）
             switch (taxType)
             {
-                case 0: // 稅外加：小計 → +營業稅5% → 總計
+                case 0: // 稅外加：小計 →（折扣 → 折後小計）→ +營業稅5% → 總計
                     table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("小計");
                     table.Cell().Element(SumCell).AlignRight().Text(Fmt(subtotal));
+
+                    if (discount > 0)
+                    {
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text($"折扣 {discount}%");
+                        table.Cell().Element(SumCell).AlignRight().Text($"-{Fmt(discountAmount)}");
+
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("折後小計");
+                        table.Cell().Element(SumCell).AlignRight().Text(Fmt(discounted));
+                    }
 
                     table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("+營業稅5%");
                     table.Cell().Element(SumCell).AlignRight().Text(Fmt(taxTotal));
@@ -395,7 +407,16 @@ internal class QuotationPdfDocument : IDocument
                         .Bold().FontColor(ColorRed);
                     break;
 
-                case 1: // 稅內含：合計（含稅）→ 內含營業稅（僅標示，不加總）
+                case 1: // 稅內含：（小計 → 折扣 →）合計（含稅）→ 內含營業稅（僅標示，不加總）
+                    if (discount > 0)
+                    {
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("小計");
+                        table.Cell().Element(SumCell).AlignRight().Text(Fmt(subtotal));
+
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text($"折扣 {discount}%");
+                        table.Cell().Element(SumCell).AlignRight().Text($"-{Fmt(discountAmount)}");
+                    }
+
                     table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
                         .Text("合計（含稅）").Bold();
                     table.Cell().Element(SumCell).AlignRight()
@@ -406,7 +427,16 @@ internal class QuotationPdfDocument : IDocument
                     table.Cell().Element(SumCell).AlignRight().Text(Fmt(taxTotal));
                     break;
 
-                default: // 免稅：只顯示合計
+                default: // 免稅：（小計 → 折扣 →）合計
+                    if (discount > 0)
+                    {
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text("小計");
+                        table.Cell().Element(SumCell).AlignRight().Text(Fmt(subtotal));
+
+                        table.Cell().ColumnSpan(3).Element(SumCell).AlignRight().Text($"折扣 {discount}%");
+                        table.Cell().Element(SumCell).AlignRight().Text($"-{Fmt(discountAmount)}");
+                    }
+
                     table.Cell().ColumnSpan(3).Element(SumCell).AlignRight()
                         .Text("合計").Bold();
                     table.Cell().Element(SumCell).AlignRight()

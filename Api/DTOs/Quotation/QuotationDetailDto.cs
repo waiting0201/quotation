@@ -21,6 +21,12 @@ public class QuotationDetailDto
     /// <summary>稅別：0=稅外加, 1=稅內含, 2=免稅</summary>
     public short? TaxType { get; set; }
 
+    /// <summary>折扣百分比（0-100 整數，0=無折扣）</summary>
+    public int? Discount { get; set; }
+
+    /// <summary>折扣金額 = round(未稅小計 × Discount / 100)，由後端計算</summary>
+    public int? DiscountAmount { get; set; }
+
     /// <summary>稅額</summary>
     public int? Tax { get; set; }
 
