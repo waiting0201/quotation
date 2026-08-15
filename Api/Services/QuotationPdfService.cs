@@ -308,8 +308,9 @@ internal class QuotationPdfDocument : IDocument
             // Row 3: E-mail（from customerdetails）/ 聯絡電話
             table.Cell().Element(LabelCell).Text("E-mail：");
             table.Cell().Element(UnderlineCell).Text(_contactPerson?.Email ?? "");
+            // 聯絡電話優先顯示客戶公司電話，未填才退回聯絡人電話
             table.Cell().Element(LabelCell).AlignRight().Text("聯絡電話：");
-            table.Cell().Element(UnderlineCell).Text(_contactPerson?.Phone ?? _customer?.Phone ?? "");
+            table.Cell().Element(UnderlineCell).Text(FirstFilled(_customer?.Phone, _contactPerson?.Phone));
 
             // Row 4: 統一編號 / 傳真電話
             table.Cell().Element(LabelCell).Text("統一編號：");
@@ -493,6 +494,10 @@ internal class QuotationPdfDocument : IDocument
 
     private static string Fmt(int? amount)
         => (amount ?? 0).ToString("N0");
+
+    /// <summary>回傳第一個有填的值（null／空字串／純空白皆視為未填）</summary>
+    private static string FirstFilled(params string?[] values)
+        => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
 
     /// <summary>從 Assembly 嵌入資源載入圖片 bytes</summary>
     private static byte[] LoadResource(string fileName)
