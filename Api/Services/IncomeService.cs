@@ -11,7 +11,7 @@ namespace QuotationApi.Services;
 /// 收款管理服務
 /// - GetListAsync:  Dapper 查詢，JOIN customers，支援 incomecode/name 關鍵字搜尋
 /// - CreateAsync:   EF Core 新增，自動產生 INC{yyyyMMdd}{NNN} 編碼
-/// - DeleteAsync:   回傳 (Found, Error)；有關聯發票時拒絕刪除
+/// - DeleteAsync:   回傳 (Found, Error)；先解除關聯發票核銷並還原狀態，再刪除
 /// </summary>
 public class IncomeService
 {
@@ -21,6 +21,11 @@ public class IncomeService
     // Asia/Taipei 時區，避免每次呼叫重複查找
     private static readonly TimeZoneInfo TaipeiTz =
         TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time");
+
+    // 發票狀態：已開(0) → 已寄出(1) → 已入帳(2) → 作廢(3)
+    private const short InvoiceStatusSent     = 1;
+    private const short InvoiceStatusReceived = 2;
+    private const short InvoiceStatusVoid     = 3;
 
     public IncomeService(QuotationDbContext db, IDbConnection dapper)
     {
@@ -113,8 +118,9 @@ public class IncomeService
     /// <summary>
     /// 新增收款記錄。
     /// 自動產生 INC{yyyyMMdd}{NNN} 編碼（依台北時區當日流水號遞增）。
-    /// 若 dto.InvoiceIds 有值，會在同一交易內將這些發票的 incomeid 指向新入帳（核銷）；
-    /// 僅核銷屬於同一客戶且尚未關聯其他入帳的發票，其餘忽略。
+    /// 若 dto.InvoiceIds 有值，會在同一交易內將這些發票的 incomeid 指向新入帳（核銷），
+    /// 並將其狀態改為「已入帳」(2)；
+    /// 僅核銷屬於同一客戶、尚未關聯其他入帳且非作廢(3)的發票，其餘忽略。
     /// </summary>
     public async Task<IncomeListDto> CreateAsync(IncomeCreateDto dto, Guid userId)
     {
@@ -136,19 +142,24 @@ public class IncomeService
 
         _db.Incomes.Add(income);
 
-        // 核銷選取的發票：將其 incomeid 指向本次新入帳。
-        // 僅處理屬於同一客戶且尚未被其他入帳佔用（incomeid IS NULL）的發票，避免跨客戶或重複核銷。
+        // 核銷選取的發票：將其 incomeid 指向本次新入帳，並標記為「已入帳」。
+        // 僅處理屬於同一客戶、尚未被其他入帳佔用（incomeid IS NULL）且非作廢的發票，
+        // 避免跨客戶、重複核銷或讓作廢單復活（與 GetSelectableInvoicesAsync 的條件一致）。
         if (dto.InvoiceIds.Count > 0)
         {
             var ids = dto.InvoiceIds.Distinct().ToList();
             var invoices = await _db.Invoices
                 .Where(inv => ids.Contains(inv.Invoiceid)
                            && inv.Customerid == dto.CustomerId
-                           && inv.Incomeid == null)
+                           && inv.Incomeid == null
+                           && inv.Status != InvoiceStatusVoid)
                 .ToListAsync();
 
             foreach (var inv in invoices)
+            {
                 inv.Incomeid = income.Incomeid;
+                inv.Status   = InvoiceStatusReceived;
+            }
         }
 
         await _db.SaveChangesAsync();
@@ -160,6 +171,7 @@ public class IncomeService
     /// <summary>
     /// 刪除收款記錄。
     /// 刪除前先解除所有關聯發票的核銷（將 invoices.incomeid 設回 NULL），
+    /// 並把因核銷而被標為「已入帳」(2) 的發票退回「已寄出」(1)，
     /// 讓這些發票回到「未入帳」可再次核銷的狀態，再刪除收款本身。
     /// </summary>
     /// <returns>(Found: false) 找不到記錄</returns>
@@ -173,7 +185,13 @@ public class IncomeService
         // 解除核銷：關聯發票的 incomeid 設回 NULL，回到可選池
         var linkedInvoices = await _db.Invoices.Where(inv => inv.Incomeid == id).ToListAsync();
         foreach (var inv in linkedInvoices)
+        {
             inv.Incomeid = null;
+
+            // 只還原核銷時自動標記的「已入帳」，使用者手動設定的其他狀態不動
+            if (inv.Status == InvoiceStatusReceived)
+                inv.Status = InvoiceStatusSent;
+        }
 
         _db.Incomes.Remove(income);
         await _db.SaveChangesAsync();
