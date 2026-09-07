@@ -292,12 +292,19 @@ public class InvoiceService
         var dateStr = today.ToString("yyyyMMdd");
         var prefix = $"INV{dateStr}";
 
-        // 計算今日已存在的編碼數量作為流水號基數
-        var count = await _db.Invoices
-            .CountAsync(i => i.Invoicecode != null && i.Invoicecode.StartsWith(prefix));
+        // 取今日最大流水號 + 1。不可改用筆數，當日若有刪除會使計數倒退而重複發號。
+        // 流水號補零至 3 位，字典序等同數值序，故直接取編碼最大值即可。
+        var lastCode = await _db.Invoices
+            .Where(i => i.Invoicecode != null && i.Invoicecode.StartsWith(prefix))
+            .OrderByDescending(i => i.Invoicecode)
+            .Select(i => i.Invoicecode)
+            .FirstOrDefaultAsync();
 
-        var seq = (count + 1).ToString("D3");
-        return $"{prefix}{seq}";
+        var seq = lastCode != null && int.TryParse(lastCode[prefix.Length..], out var lastSeq)
+            ? lastSeq + 1
+            : 1;
+
+        return $"{prefix}{seq:D3}";
     }
 
     /// <summary>

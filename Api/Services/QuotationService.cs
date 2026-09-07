@@ -295,11 +295,19 @@ public class QuotationService
         var dateStr = today.ToString("yyyyMMdd");
         var prefix  = $"QUO{dateStr}";
 
-        var count = await _db.Items
-            .CountAsync(i => i.Itemcode != null && i.Itemcode.StartsWith(prefix));
+        // 取今日最大流水號 + 1。不可改用筆數，當日若有刪除會使計數倒退而重複發號。
+        // 流水號補零至 3 位，字典序等同數值序，故直接取編碼最大值即可。
+        var lastCode = await _db.Items
+            .Where(i => i.Itemcode != null && i.Itemcode.StartsWith(prefix))
+            .OrderByDescending(i => i.Itemcode)
+            .Select(i => i.Itemcode)
+            .FirstOrDefaultAsync();
 
-        var seq = (count + 1).ToString("D3");
-        return $"{prefix}{seq}";
+        var seq    = lastCode != null && int.TryParse(lastCode[prefix.Length..], out var lastSeq)
+            ? lastSeq + 1
+            : 1;
+
+        return $"{prefix}{seq:D3}";
     }
 
     /// <summary>
