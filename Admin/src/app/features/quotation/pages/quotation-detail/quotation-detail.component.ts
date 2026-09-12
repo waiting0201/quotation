@@ -59,6 +59,14 @@ export class QuotationDetailComponent implements OnInit {
   /** 折扣金額（後端計算） */
   readonly discountAmount = computed(() => this.quotation()?.discountAmount ?? 0);
 
+  /** 已收款金額（含稅）：由已核銷的請款明細加總，後端 ItemSettlementService 維護 */
+  readonly income = computed(() => this.quotation()?.income ?? 0);
+
+  /** 未收餘額；收訖或溢收時為 0 */
+  readonly outstanding = computed(() =>
+    Math.max((this.quotation()?.total ?? 0) - this.income(), 0)
+  );
+
   /** 折後未稅合計（total/tax 已是折後值，反推即為折後未稅） */
   readonly pretaxTotal = computed(() => {
     const q = this.quotation();

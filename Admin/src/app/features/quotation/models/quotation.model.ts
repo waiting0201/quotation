@@ -7,6 +7,8 @@ export interface QuotationListItem {
   taxType: number;
   tax: number;
   total: number;
+  /** 已收款金額（含稅），由已核銷的請款明細加總 */
+  income: number;
   status: number;
   createDate: string;
   hasInvoices: boolean;
@@ -29,6 +31,8 @@ export interface QuotationDetailResponse {
   discountAmount: number;
   tax: number;
   total: number;
+  /** 已收款金額（含稅），由已核銷的請款明細加總 */
+  income: number;
   payment: string;
   enPayment: string;
   remark: string;

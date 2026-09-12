@@ -246,6 +246,19 @@
   text-align: right;
 }
 
+// 總額下方的已收款標示：次要資訊，字級與彩度都壓過總額
+.col-amount__income {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #969696;
+
+  // 收訖沿用「已結案」的綠，兩者語意一致
+  &.is-settled {
+    color: #22C55E;
+  }
+}
+
 .col-status {
   // 由 status-badge 自行排版
 }

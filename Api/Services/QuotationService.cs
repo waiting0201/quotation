@@ -68,6 +68,7 @@ public class QuotationService
                 i.taxtype           AS TaxType,
                 i.tax               AS Tax,
                 i.total             AS Total,
+                i.income            AS Income,
                 i.status            AS Status,
                 i.createdate        AS CreateDate,
                 CAST(CASE WHEN EXISTS (
@@ -107,6 +108,7 @@ public class QuotationService
                 i.discount          AS Discount,
                 i.tax               AS Tax,
                 i.total             AS Total,
+                i.income            AS Income,
                 i.workdays          AS Workdays,
                 i.status            AS Status,
                 i.createdate        AS CreateDate

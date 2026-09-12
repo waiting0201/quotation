@@ -403,6 +403,15 @@
   font-size: 14px;
   color: #C0C0C0;
   font-variant-numeric: tabular-nums;
+
+  // 收訖沿用「已結案」的綠、未收餘額沿用「已簽約」的琥珀，與狀態標籤語意一致
+  &.is-settled {
+    color: #22C55E;
+  }
+
+  &.is-outstanding {
+    color: #FFB300;
+  }
 }
 
 .summary-label-grand {

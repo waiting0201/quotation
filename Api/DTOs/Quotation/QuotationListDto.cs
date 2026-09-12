@@ -21,6 +21,9 @@ public class QuotationListDto
     /// <summary>含稅合計金額</summary>
     public int? Total { get; set; }
 
+    /// <summary>已收款金額（含稅），由已核銷的請款明細加總，見 ItemSettlementService</summary>
+    public int? Income { get; set; }
+
     /// <summary>狀態：0=已報價, 1=已簽約, 2=已結案, 3=已取消</summary>
     public short? Status { get; set; }
 

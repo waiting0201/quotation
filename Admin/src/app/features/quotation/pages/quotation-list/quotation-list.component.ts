@@ -198,6 +198,18 @@ export class QuotationListComponent implements OnInit {
     return TAX_LABELS[taxType] ?? '—';
   }
 
+  /**
+   * 含稅總額下方的已收款標示。
+   * 全額收訖時只寫「已收訖」（金額與上方總額相同，不重複顯示）；
+   * 部分收款顯示已收金額；完全未收款則不顯示，讓列表保持安靜。
+   */
+  getIncomeNote(quotation: QuotationListItem): { text: string; settled: boolean } | null {
+    const income = quotation.income ?? 0;
+    if (income <= 0) return null;
+    if (income >= quotation.total) return { text: '已收訖', settled: true };
+    return { text: `已收 ${income.toLocaleString()}`, settled: false };
+  }
+
   getStatusConfig(status: number): { label: string; cssClass: string } {
     return STATUS_CONFIG[status] ?? { label: '未知', cssClass: '' };
   }

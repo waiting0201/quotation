@@ -117,9 +117,14 @@
               {{ getTaxLabel(quotation.taxType) }}
             </td>
 
-            <!-- 含稅總額 -->
+            <!-- 含稅總額（下方標示已收款狀況） -->
             <td class="col-amount" data-label="含稅總額">
               {{ formatAmount(quotation.total) }}
+              @if (getIncomeNote(quotation); as note) {
+                <span class="col-amount__income" [class.is-settled]="note.settled">
+                  {{ note.text }}
+                </span>
+              }
             </td>
 
             <!-- 狀態 -->

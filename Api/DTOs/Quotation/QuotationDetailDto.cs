@@ -33,6 +33,9 @@ public class QuotationDetailDto
     /// <summary>含稅合計金額</summary>
     public int? Total { get; set; }
 
+    /// <summary>已收款金額（含稅），由已核銷的請款明細加總，見 ItemSettlementService</summary>
+    public int? Income { get; set; }
+
     /// <summary>工作天數</summary>
     public int? Workdays { get; set; }
 

@@ -226,6 +226,19 @@
           <span class="summary-label-grand">含稅總額</span>
           <span class="summary-grand">{{ formatAmount(q.total) }}</span>
         </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span class="summary-label">已收款</span>
+          <span class="summary-value" [class.is-settled]="outstanding() === 0 && income() > 0">
+            {{ formatAmount(income()) }}
+          </span>
+        </div>
+        @if (outstanding() > 0) {
+          <div class="summary-row">
+            <span class="summary-label">未收餘額</span>
+            <span class="summary-value is-outstanding">{{ formatAmount(outstanding()) }}</span>
+          </div>
+        }
       </div>
     </div>
   </div>
