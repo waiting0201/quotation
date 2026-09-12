@@ -10,13 +10,16 @@ namespace QuotationApi.Services;
 /// <summary>
 /// 收款管理服務
 /// - GetListAsync:  Dapper 查詢，JOIN customers，支援 incomecode/name 關鍵字搜尋
-/// - CreateAsync:   EF Core 新增，自動產生 INC{yyyyMMdd}{NNN} 編碼
-/// - DeleteAsync:   回傳 (Found, Error)；先解除關聯發票核銷並還原狀態，再刪除
+/// - CreateAsync:   EF Core 新增，自動產生 INC{yyyyMMdd}{NNN} 編碼；核銷發票後在同一交易內
+///                  以 ItemSettlementService 回寫報價單的 income/status
+/// - DeleteAsync:   回傳 (Found, Error)；先解除關聯發票核銷並還原狀態，再刪除，
+///                  同樣在同一交易內回寫報價單的 income/status
 /// </summary>
 public class IncomeService
 {
     private readonly QuotationDbContext _db;
     private readonly IDbConnection      _dapper;
+    private readonly ItemSettlementService _itemSettlement;
 
     // Asia/Taipei 時區，避免每次呼叫重複查找
     private static readonly TimeZoneInfo TaipeiTz =
@@ -27,10 +30,11 @@ public class IncomeService
     private const short InvoiceStatusReceived = 2;
     private const short InvoiceStatusVoid     = 3;
 
-    public IncomeService(QuotationDbContext db, IDbConnection dapper)
+    public IncomeService(QuotationDbContext db, IDbConnection dapper, ItemSettlementService itemSettlement)
     {
-        _db     = db;
-        _dapper = dapper;
+        _db             = db;
+        _dapper         = dapper;
+        _itemSettlement = itemSettlement;
     }
 
     // ── 查詢 ────────────────────────────────────────────────────────────────
@@ -124,6 +128,15 @@ public class IncomeService
     /// </summary>
     public async Task<IncomeListDto> CreateAsync(IncomeCreateDto dto, Guid userId)
     {
+        // 本操作橫跨兩個聚合根（invoices 核銷 + items 的 income/status 回寫），
+        // 必須用 explicit transaction 包起來確保原子性：
+        // ItemSettlementService.RecalculateAsync 是用 EF 查詢資料庫現況來重算，
+        // 看不到尚未 SaveChangesAsync 的記憶體變更，所以要先寫入發票核銷、
+        // 再重算報價單、再寫入一次，最後一起 Commit；任何一步失敗都要整批回滾，
+        // 避免出現「發票已核銷但報價單狀態沒同步」的中間態。
+        // 交易從方法最開頭就開啟，讓編碼流水號查詢與後續的報價單鎖定都納入同一交易。
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
         var incomeCode  = await GenerateCodeAsync();
         var taipeiNow   = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TaipeiTz);
 
@@ -145,6 +158,8 @@ public class IncomeService
         // 核銷選取的發票：將其 incomeid 指向本次新入帳，並標記為「已入帳」。
         // 僅處理屬於同一客戶、尚未被其他入帳佔用（incomeid IS NULL）且非作廢的發票，
         // 避免跨客戶、重複核銷或讓作廢單復活（與 GetSelectableInvoicesAsync 的條件一致）。
+        var affectedItemIds = new List<Guid>();
+
         if (dto.InvoiceIds.Count > 0)
         {
             var ids = dto.InvoiceIds.Distinct().ToList();
@@ -155,6 +170,19 @@ public class IncomeService
                            && inv.Status != InvoiceStatusVoid)
                 .ToListAsync();
 
+            if (invoices.Count > 0)
+            {
+                var invoiceIds = invoices.Select(inv => inv.Invoiceid).ToList();
+                affectedItemIds = await _db.Invoicedetails
+                    .Where(d => d.Invoiceid != null && invoiceIds.Contains(d.Invoiceid.Value) && d.Itemid != null)
+                    .Select(d => d.Itemid!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 動到發票之前先鎖住受影響的報價單，序列化同一張報價單的併發入帳
+                await _itemSettlement.LockItemsAsync(affectedItemIds);
+            }
+
             foreach (var inv in invoices)
             {
                 inv.Incomeid = income.Incomeid;
@@ -163,6 +191,14 @@ public class IncomeService
         }
 
         await _db.SaveChangesAsync();
+
+        if (affectedItemIds.Count > 0)
+        {
+            await _itemSettlement.RecalculateAsync(affectedItemIds);
+            await _db.SaveChangesAsync();
+        }
+
+        await transaction.CommitAsync();
 
         // 重新以 Dapper 查詢，確保回傳的 CustomerName 已 JOIN
         return (await GetSingleAsync(income.Incomeid))!;
@@ -182,8 +218,27 @@ public class IncomeService
         if (income == null)
             return (Found: false, Error: null);
 
+        // 同 CreateAsync：解除核銷（invoices）與報價單 income/status 回寫需在同一交易內，
+        // 確保刪除入帳後兩邊資料一致，不會半套。
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
         // 解除核銷：關聯發票的 incomeid 設回 NULL，回到可選池
         var linkedInvoices = await _db.Invoices.Where(inv => inv.Incomeid == id).ToListAsync();
+
+        List<Guid> affectedItemIds = new();
+        if (linkedInvoices.Count > 0)
+        {
+            var invoiceIds = linkedInvoices.Select(inv => inv.Invoiceid).ToList();
+            affectedItemIds = await _db.Invoicedetails
+                .Where(d => d.Invoiceid != null && invoiceIds.Contains(d.Invoiceid.Value) && d.Itemid != null)
+                .Select(d => d.Itemid!.Value)
+                .Distinct()
+                .ToListAsync();
+
+            // 動到發票之前先鎖住受影響的報價單（理由同 CreateAsync）
+            await _itemSettlement.LockItemsAsync(affectedItemIds);
+        }
+
         foreach (var inv in linkedInvoices)
         {
             inv.Incomeid = null;
@@ -194,7 +249,16 @@ public class IncomeService
         }
 
         _db.Incomes.Remove(income);
+
         await _db.SaveChangesAsync();
+
+        if (affectedItemIds.Count > 0)
+        {
+            await _itemSettlement.RecalculateAsync(affectedItemIds);
+            await _db.SaveChangesAsync();
+        }
+
+        await transaction.CommitAsync();
 
         return (Found: true, Error: null);
     }

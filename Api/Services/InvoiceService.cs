@@ -12,23 +12,28 @@ namespace QuotationApi.Services;
 /// - GetListAsync:             Dapper 查詢，JOIN customers，支援 invoicecode/name 關鍵字搜尋
 /// - GetByIdAsync:             Dapper 查詢完整詳情（JOIN customers），另查明細（JOIN items）
 /// - GetCustomerQuotationsAsync: 查詢客戶的報價單列表（供發票明細下拉選擇）
-/// - CreateAsync:              EF Core 新增，自動產生 INV{yyyyMMdd}{NNN} 編碼，計算稅額
-/// - UpdateAsync:              EF Core 更新標頭、刪舊明細後重新插入、重新計算稅額
-/// - DeleteAsync:              回傳 (Found, Error)；已關聯收款時拒絕刪除
+/// - CreateAsync:              EF Core 新增，自動產生 INV{yyyyMMdd}{NNN} 編碼，計算稅額；
+///                             新建發票 incomeid 必為 null，不影響報價單 income/status，故略過重算
+/// - UpdateAsync:              EF Core 更新標頭、刪舊明細後重新插入、重新計算稅額；
+///                             若發票已核銷，明細變動會影響報價單 income，需在同一交易內重算
+/// - DeleteAsync:              回傳 (Found, Error)；已關聯收款時拒絕刪除；
+///                             刪除未核銷發票不影響 income，但仍統一重算以確保一致
 /// </summary>
 public class InvoiceService
 {
     private readonly QuotationDbContext _db;
     private readonly IDbConnection _dapper;
+    private readonly ItemSettlementService _itemSettlement;
 
     // Asia/Taipei 時區，避免每次呼叫重複查找
     private static readonly TimeZoneInfo TaipeiTz =
         TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time");
 
-    public InvoiceService(QuotationDbContext db, IDbConnection dapper)
+    public InvoiceService(QuotationDbContext db, IDbConnection dapper, ItemSettlementService itemSettlement)
     {
         _db = db;
         _dapper = dapper;
+        _itemSettlement = itemSettlement;
     }
 
     // ── 查詢 ────────────────────────────────────────────────────────────────
@@ -168,13 +173,15 @@ public class InvoiceService
     /// 新增發票。
     /// 自動產生 INV{yyyyMMdd}{NNN} 編碼（依台北時區當日流水號遞增）。
     /// 依各明細關聯報價單的稅別計算稅額：
-    ///   taxtype 0（稅外加）：tax = round(price * 0.05)
-    ///   taxtype 1（稅內含）：tax = price - round(price / 1.05)
-    ///   taxtype 2（免稅）  ：tax = 0
+    ///   taxtype 0（稅外加）/ 1（稅內含）：tax = round(price * 0.05)
+    ///   taxtype 2（免稅）              ：tax = 0
     /// 彙總所有明細的稅額與金額後寫入發票標頭。
     /// </summary>
     public async Task<InvoiceDetailResponseDto> CreateAsync(InvoiceCreateUpdateDto dto, Guid userId)
     {
+        // 標頭與明細分兩次 SaveChanges，加上後續的報價單回寫，需視為單一原子操作。
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
         var invoiceCode = await GenerateCodeAsync();
         var taipeiNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TaipeiTz);
 
@@ -208,6 +215,11 @@ public class InvoiceService
             await _db.SaveChangesAsync();
         }
 
+        // 注意：新建發票的 incomeid 一定是 null，不影響 items.income（公式只加總已核銷明細）；
+        // 而報價單結案是單向的（只 1 → 2，不反向退回），新增一張未核銷發票也不會改變狀態，
+        // 所以這裡不需要呼叫 ItemSettlementService 重算。
+        await transaction.CommitAsync();
+
         return (await GetByIdAsync(invoice.Invoiceid))!;
     }
 
@@ -225,6 +237,27 @@ public class InvoiceService
 
         if (invoice == null)
             return null;
+
+        // 明細是整批刪除重建，若此發票已核銷（incomeid 有值），
+        // 明細金額/所屬報價單（itemid）的變動會影響 items.income，
+        // 故收集「更新前」與「更新後」兩批 itemid，更新完成後一併重算，
+        // 涵蓋「把明細從 A 報價單改連到 B 報價單」這種兩邊都要回寫的情況。
+        var affectedItemIds = invoice.Invoicedetails
+            .Where(d => d.Itemid != null)
+            .Select(d => d.Itemid!.Value)
+            .Union(dto.Details.Where(d => d.ItemId.HasValue).Select(d => d.ItemId!.Value))
+            .Distinct()
+            .ToList();
+
+        // 明細整批刪除重建（含中途的 AddDetailsAsync 內部 SaveChangesAsync）
+        // + 報價單 income/status 回寫，必須視為單一原子操作 —— 若其中任何一步
+        // 失敗，會留下「明細已改但金額/報價單未同步」的不一致狀態，因此在最開頭
+        // 就開交易，包住後續所有 SaveChangesAsync（同一交易內多次 SaveChanges
+        // 會自動併入這個 explicit transaction，直到 Commit 才真正落地）。
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // 動資料之前先鎖住受影響的報價單（理由見 ItemSettlementService.LockItemsAsync）
+        await _itemSettlement.LockItemsAsync(affectedItemIds);
 
         // 更新標頭欄位
         invoice.Customerid  = dto.CustomerId;
@@ -250,6 +283,14 @@ public class InvoiceService
 
         await _db.SaveChangesAsync();
 
+        if (affectedItemIds.Count > 0)
+        {
+            await _itemSettlement.RecalculateAsync(affectedItemIds);
+            await _db.SaveChangesAsync();
+        }
+
+        await transaction.CommitAsync();
+
         return await GetByIdAsync(id);
     }
 
@@ -271,10 +312,35 @@ public class InvoiceService
         if (invoice.Incomeid.HasValue)
             return (Found: true, Error: "此發票已關聯收款記錄，無法刪除。");
 
+        // 收集刪除前的明細所屬報價單，刪除後重算 income/status。
+        // 註：能走到這裡代表 incomeid 必為 null（上方已擋已核銷的發票），理論上
+        // 不影響 income，但仍統一呼叫重算以保持與 Create/Update 一致、避免日後
+        // 刪除保護規則調整時遺漏這裡。
+        var affectedItemIds = invoice.Invoicedetails
+            .Where(d => d.Itemid != null)
+            .Select(d => d.Itemid!.Value)
+            .Distinct()
+            .ToList();
+
         // 手動刪除明細（FK 未設 cascade delete）
         _db.Invoicedetails.RemoveRange(invoice.Invoicedetails);
         _db.Invoices.Remove(invoice);
+
+        // 刪除明細/發票 + 報價單回寫需視為單一原子操作，理由同 UpdateAsync。
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // 動資料之前先鎖住受影響的報價單（理由見 ItemSettlementService.LockItemsAsync）
+        await _itemSettlement.LockItemsAsync(affectedItemIds);
+
         await _db.SaveChangesAsync();
+
+        if (affectedItemIds.Count > 0)
+        {
+            await _itemSettlement.RecalculateAsync(affectedItemIds);
+            await _db.SaveChangesAsync();
+        }
+
+        await transaction.CommitAsync();
 
         return (Found: true, Error: null);
     }
@@ -311,11 +377,11 @@ public class InvoiceService
     /// 將發票明細批次插入資料庫，並根據關聯報價單的稅別計算每筆明細的稅額。
     /// 回傳（稅額合計, 金額合計）供更新發票標頭使用。
     ///
-    /// 稅別計算規則（依 items.taxtype）：
-    ///   0（稅外加）：tax = round(price * 0.05)；total 計入 price（未稅金額）
-    ///   1（稅內含）：tax = price - round(price / 1.05)；total 計入 price（含稅金額）
-    ///   2（免稅）  ：tax = 0；total 計入 price
-    ///   null（查不到報價單）：稅別視為免稅處理，tax = 0
+    /// 稅別計算規則（依 items.taxtype）：明細輸入的 price 一律是「未稅金額」，
+    /// 故 invoices.total 恆為未稅合計、invoices.tax 為稅額合計，含稅總額 = total + tax。
+    ///   0（稅外加）/ 1（稅內含）：tax = round(price * 0.05)
+    ///   2（免稅）              ：tax = 0
+    ///   null（查不到報價單）    ：稅別視為免稅處理，tax = 0
     /// </summary>
     private async Task<(int TotalTax, int TotalAmount)> AddDetailsAsync(
         Guid invoiceId, List<InvoiceDetailDto> detailDtos)
@@ -373,17 +439,20 @@ public class InvoiceService
     }
 
     /// <summary>
-    /// 依稅別計算單筆稅額。
-    ///   taxtype 0（稅外加）：tax = round(price * 0.05)
-    ///   taxtype 1（稅內含）：tax = price - round(price / 1.05)  → 反推未稅部分的稅額
-    ///   taxtype 2（免稅）  ：tax = 0
-    ///   null               ：視為免稅，tax = 0
+    /// 依稅別計算單筆請款明細的稅額（price 為未稅金額）。
+    ///   taxtype 0（稅外加）/ 1（稅內含）：tax = round(price * 0.05)
+    ///   taxtype 2（免稅）              ：tax = 0
+    ///   null                          ：視為免稅，tax = 0
     /// </summary>
     private static int CalculateTax(int price, short? taxType)
         => taxType switch
         {
-            0 => (int)Math.Round(price * 0.05),
-            1 => price - (int)Math.Round(price / 1.05),
-            _ => 0   // taxtype 2（免稅）或 null 均為 0
+            // 0（稅外加）與 1（稅內含）在請款明細層級的算法相同：
+            // 表單輸入的 price 是「未稅金額」，稅額一律外加 5%。
+            // 稅別只影響報價單標頭如何由總價反推未稅，不影響明細；
+            // 舊寫法對 taxtype 1 反推內含稅（price - round(price/1.05)），
+            // 會讓 total + tax（列表、PDF、報價單已收款金額的通用算式）短少約 5%。
+            0 or 1 => (int)Math.Round(price * 0.05),
+            _      => 0   // taxtype 2（免稅）或 null 均為 0
         };
 }

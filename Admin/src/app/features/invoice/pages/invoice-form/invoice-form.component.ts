@@ -327,14 +327,16 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   // 單筆明細稅額：依關聯報價單稅別 0=稅外加 1=稅內含 2/無=免稅
+  // 0 與 1 算法相同 —— 明細輸入的 price 是「未稅金額」，稅額一律外加 5%；
+  // 稅別只影響報價單標頭如何由總價反推未稅，不影響請款明細。
+  // 需與後端 InvoiceService.CalculateTax 保持一致。
   rowTax(ctrl: AbstractControl): number {
     const price = Number(ctrl.get('price')?.value) || 0;
     if (price <= 0) return 0;
     switch (ctrl.get('itemTaxType')?.value) {
       case 0:
-        return this._roundHalfToEven(price * 0.05);
       case 1:
-        return price - this._roundHalfToEven(price / 1.05);
+        return this._roundHalfToEven(price * 0.05);
       default:
         return 0;
     }

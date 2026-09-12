@@ -76,6 +76,7 @@ builder.Services.AddScoped<HostService>();
 builder.Services.AddScoped<IncomeService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<InvoicePdfService>();
+builder.Services.AddScoped<ItemSettlementService>();
 builder.Services.AddScoped<LookupService>();
 builder.Services.AddScoped<QuotationPdfService>();
 builder.Services.AddScoped<PaymentService>();
